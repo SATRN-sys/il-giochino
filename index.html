@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il Tavolo — Mazzo di carte</title>
+<meta name="theme-color" content="#0f3527">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Un mazzo di 54 carte, da uno a otto amici e il vostro tavolo. Funziona anche offline.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Il Tavolo">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./fonts.css">
+<script src="./pwa.js" defer></script>
+<style>
+  :root{
+    --felt:#0f3527;
+    --felt-deep:#0a2a1e;
+    --ivory:#f7f1e1;
+    --ivory-dim:#ece3cc;
+    --gold:#c9a24b;
+    --gold-bright:#e3c374;
+    --burgundy:#7c1f2a;
+    --burgundy-bright:#9c2c3a;
+    --ink:#171410;
+    --shadow:rgba(0,0,0,.45);
+    --radius-card:10px;
+    --radius-ui:16px;
+    --font-display:'Fraunces',serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:var(--font-body);
+    background:
+      radial-gradient(ellipse at top, rgba(255,255,255,.06), transparent 55%),
+      radial-gradient(ellipse at bottom, rgba(0,0,0,.45), transparent 65%),
+      var(--felt);
+    color:var(--ivory);
+  }
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .screen[hidden]{display:none;}
+  :focus-visible{outline:3px solid var(--gold-bright);outline-offset:2px;}
+
+  .eyebrow{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.15em;font-size:.65rem;color:var(--gold-bright);margin:0 0 .4rem;}
+  h1{font-family:var(--font-display);font-weight:600;color:var(--ivory);margin:0;}
+  h2{font-family:var(--font-display);font-size:1rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-bright);border-bottom:1px solid rgba(201,162,75,.25);padding-bottom:.5rem;margin:0 0 1rem;}
+
+  /* ---------- SETUP SCREEN ---------- */
+  .screen-setup{max-width:460px;margin:5vh auto;padding:2.2rem 1.6rem;background:rgba(0,0,0,.28);border-radius:18px;border:1px solid rgba(201,162,75,.3);box-shadow:0 20px 50px rgba(0,0,0,.35);}
+  .setup-title{font-size:1.7rem;margin:0 0 .5rem;}
+  .setup-sub{color:rgba(247,241,225,.65);font-size:.85rem;margin:0 0 .3rem;line-height:1.5;}
+  .setup-note{color:rgba(247,241,225,.4);font-size:.75rem;margin:0 0 .5rem;font-style:italic;}
+
+  .stepper{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1.6rem 0;}
+  .stepper-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--gold);background:transparent;color:var(--gold-bright);font-size:1.3rem;cursor:pointer;line-height:1;}
+  .stepper-btn:disabled{opacity:.3;cursor:not-allowed;}
+  .stepper-value{font-family:var(--font-mono);color:var(--ivory);font-size:.85rem;min-width:110px;text-align:center;}
+
+  .name-inputs{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.5rem;}
+  .name-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+  .name-row label{font-family:var(--font-mono);font-size:.7rem;color:rgba(247,241,225,.55);min-width:88px;}
+  .name-row input{flex:1;min-width:120px;background:rgba(247,241,225,.06);border:1px solid rgba(201,162,75,.3);border-radius:8px;padding:.55rem .7rem;color:var(--ivory);font-family:var(--font-body);font-size:.9rem;}
+  .name-row input::placeholder{color:rgba(247,241,225,.35);}
+  .name-row input:focus{outline:none;border-color:var(--gold-bright);background:rgba(247,241,225,.1);}
+
+  /* ---------- BUTTONS ---------- */
+  .btn{font-family:var(--font-body);font-weight:600;font-size:.85rem;letter-spacing:.02em;padding:.7rem 1.3rem;border-radius:999px;border:none;cursor:pointer;transition:transform .15s ease, filter .15s ease;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:active{transform:scale(.97);}
+  .btn-gold{background:linear-gradient(160deg,var(--gold-bright),var(--gold));color:var(--ink);box-shadow:0 6px 16px rgba(201,162,75,.25);}
+  .btn-ghost{background:transparent;border:1px solid rgba(247,241,225,.35);color:var(--ivory);}
+  .btn-block{width:100%;margin-top:1.6rem;}
+  .btn-small{padding:.5rem .9rem;font-size:.75rem;}
+  .btn-player-choice{background:rgba(23,20,16,.06);border:1px solid rgba(23,20,16,.15);border-radius:10px;padding:.55rem .9rem;margin:.25rem;font-family:var(--font-body);font-weight:600;cursor:pointer;}
+  .btn-player-choice:hover{background:rgba(23,20,16,.12);}
+
+  /* ---------- GAME SCREEN ---------- */
+  .screen-game{max-width:640px;margin:0 auto;padding:0 1.2rem 3rem;}
+  .table-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.8rem 0 1.1rem;border-bottom:1px solid rgba(201,162,75,.25);margin-bottom:.4rem;}
+  .table-title h1{font-size:clamp(1.7rem,5vw,2.1rem);}
+  .header-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+  .table-hint{color:rgba(247,241,225,.55);font-size:.78rem;text-align:center;margin:.9rem 0 0;}
+
+  .piles-row{display:flex;gap:1.8rem;justify-content:center;flex-wrap:wrap;padding:1.8rem 0 .5rem;}
+  .pile-block{display:flex;flex-direction:column;align-items:center;}
+  .pile-label{font-family:var(--font-display);text-transform:uppercase;letter-spacing:.12em;font-size:.78rem;color:var(--gold-bright);margin-bottom:.7rem;}
+  .pile-count{display:inline-block;font-family:var(--font-mono);font-weight:700;font-size:.95rem;color:var(--ink);background:var(--gold-bright);padding:.3rem .8rem;border-radius:999px;margin-top:.8rem;letter-spacing:.02em;box-shadow:0 3px 8px rgba(0,0,0,.25);}
+
+  .pile{position:relative;width:clamp(120px,30vw,158px);aspect-ratio:5/7;}
+  .deck-pile{cursor:pointer;transition:transform .2s ease;}
+  .deck-pile:hover{transform:translateY(-4px) scale(1.02);}
+  .deck-pile:focus-visible{outline:3px solid var(--gold-bright);outline-offset:4px;border-radius:var(--radius-card);}
+  .deck-pile.empty{cursor:not-allowed;}
+
+  .face{position:absolute;inset:0;border-radius:var(--radius-card);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 14px 32px var(--shadow);}
+
+  .card-back{background:var(--burgundy);border:2px solid var(--gold);box-sizing:border-box;}
+  .card-back-frame{position:absolute;inset:9px;border:1px solid rgba(247,241,225,.4);border-radius:8px;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(247,241,225,.07) 0 2px, transparent 2px 10px),
+      repeating-linear-gradient(-45deg, rgba(247,241,225,.07) 0 2px, transparent 2px 10px);
+  }
+  .card-back-emblem{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg);width:clamp(38px,13vw,50px);height:clamp(38px,13vw,50px);display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;place-items:center;background:var(--felt-deep);border:1px solid var(--gold);border-radius:5px;}
+  .card-back-emblem span{transform:rotate(-45deg);font-size:clamp(.72rem,2.6vw,.95rem);color:var(--gold-bright);line-height:1;}
+
+  .card-face{background:radial-gradient(circle at 50% 38%, rgba(255,255,255,.55), transparent 62%), var(--ivory);border:2px solid rgba(23,20,16,.14);box-sizing:border-box;padding:8px;justify-content:space-between;}
+  .card-face.red{color:var(--burgundy);}
+  .card-face.black{color:var(--ink);}
+  .corner{display:flex;flex-direction:column;align-items:center;line-height:1;font-family:var(--font-display);}
+  .corner .rank{font-size:clamp(1.15rem,4.2vw,1.55rem);font-weight:700;}
+  .corner .suit{font-size:clamp(.9rem,3.2vw,1.15rem);}
+  .corner.bottom-right{align-self:flex-end;transform:rotate(180deg);}
+  .center-suit{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(2.9rem,11vw,4.1rem);opacity:.92;pointer-events:none;}
+
+  .joker-face{background:var(--ivory);border:2px solid var(--gold);position:relative;align-items:center;justify-content:center;}
+  .joker-sunburst{position:absolute;inset:-25%;background:repeating-conic-gradient(from 0deg, rgba(201,162,75,.16) 0 10deg, transparent 10deg 20deg);border-radius:50%;}
+  .joker-word{position:relative;font-family:var(--font-display);font-style:italic;font-weight:600;font-size:1.15rem;letter-spacing:.06em;transform:rotate(-6deg);}
+  .joker-face.joker-rosso .joker-word{color:var(--burgundy);}
+  .joker-face.joker-nero .joker-word{color:var(--ink);}
+  .joker-corner{position:absolute;font-size:.78rem;color:var(--gold);}
+  .joker-corner.top{top:6px;left:8px;}
+  .joker-corner.bottom{bottom:6px;right:8px;}
+
+  .figure-svg{position:absolute;left:50%;top:50%;width:58%;height:84%;transform:translate(-50%,-50%);pointer-events:none;}
+  .figure-crown{fill:var(--gold);}
+  .figure-body{fill:currentColor;}
+  .figure-trim{fill:var(--gold);}
+
+  .empty-slot{position:absolute;inset:0;border:2px dashed rgba(247,241,225,.35);border-radius:var(--radius-card);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.8rem;font-weight:600;color:rgba(247,241,225,.6);padding:.6rem;line-height:1.4;}
+
+  @keyframes dealIn{from{opacity:0;transform:translate(-36px,-10px) rotate(-10deg) scale(.92);}to{opacity:1;transform:none;}}
+  .discard-pile.just-dealt .face{animation:dealIn .38s ease-out;}
+  @keyframes shuffleShake{0%{transform:rotate(0);}20%{transform:rotate(-6deg);}40%{transform:rotate(5deg);}60%{transform:rotate(-4deg);}80%{transform:rotate(3deg);}100%{transform:rotate(0);}}
+  .deck-pile.shuffling{animation:shuffleShake .5s ease-in-out;}
+  @keyframes emptyPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,31,42,0);}50%{box-shadow:0 0 0 8px rgba(124,31,42,.35);}}
+  .deck-pile.empty-pulse{animation:emptyPulse .4s ease;}
+  @media (prefers-reduced-motion: reduce){
+    .discard-pile.just-dealt .face{animation:none;}
+    .deck-pile.shuffling{animation:none;}
+    .deck-pile:hover{transform:none;}
+    .modal-overlay,.modal-card{transition:none !important;}
+  }
+
+  /* ---------- PANELS ---------- */
+  .players-panel,.jokers-panel{margin-top:2.2rem;}
+  .jokers-panel{border:1px solid rgba(201,162,75,.25);border-radius:var(--radius-ui);background:rgba(0,0,0,.18);padding:.2rem .9rem;}
+  .jokers-summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.8rem 0;font-family:var(--font-display);text-transform:uppercase;letter-spacing:.06em;font-size:.85rem;color:var(--gold-bright);}
+  .jokers-summary::-webkit-details-marker{display:none;}
+  .jokers-summary::after{content:'▾';font-size:.8rem;color:var(--gold);transition:transform .2s ease;}
+  .jokers-panel[open] .jokers-summary::after{transform:rotate(180deg);}
+  .jokers-badge{font-family:var(--font-mono);text-transform:none;letter-spacing:0;font-size:.72rem;color:var(--ink);background:var(--gold-bright);padding:.25rem .65rem;border-radius:999px;white-space:nowrap;}
+  .jokers-badge.is-empty{color:rgba(247,241,225,.55);background:rgba(247,241,225,.08);}
+  .jokers-body{padding:0 0 .9rem;}
+  .players-list{display:flex;flex-direction:column;gap:.75rem;}
+  .player-seat{background:rgba(0,0,0,.22);border:1px solid rgba(201,162,75,.25);border-radius:var(--radius-ui);padding:.85rem 1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+  .seat-label{font-family:var(--font-mono);font-size:.65rem;color:rgba(247,241,225,.5);min-width:60px;}
+  .seat-name{font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--ivory);min-width:90px;}
+  .seat-jokers{display:flex;flex-wrap:wrap;gap:.4rem;flex:1;justify-content:flex-end;}
+  .no-joker{font-size:.78rem;color:rgba(247,241,225,.4);font-style:italic;}
+  .joker-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .5rem .25rem .65rem;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap;}
+  .chip-rosso{background:rgba(124,31,42,.85);color:var(--ivory);}
+  .chip-nero{background:rgba(23,20,16,.85);color:var(--gold-bright);border:1px solid rgba(201,162,75,.4);}
+  .chip-discard{background:rgba(255,255,255,.2);border:none;color:inherit;font-family:var(--font-body);font-weight:700;font-size:.62rem;text-transform:uppercase;letter-spacing:.03em;padding:.18rem .5rem;border-radius:999px;cursor:pointer;}
+  .chip-discard:hover{background:rgba(255,255,255,.34);}
+
+  .joker-row{display:flex;align-items:center;gap:.65rem;background:rgba(0,0,0,.2);border:1px solid rgba(201,162,75,.2);border-radius:12px;padding:.6rem .8rem;margin-bottom:.6rem;flex-wrap:wrap;}
+  .joker-row-face{width:26px;height:36px;border-radius:4px;flex:0 0 auto;}
+  .joker-row-face.chip-rosso{background:linear-gradient(160deg,var(--burgundy-bright),var(--burgundy));}
+  .joker-row-face.chip-nero{background:linear-gradient(160deg,#2b241b,var(--ink));border:1px solid var(--gold);}
+  .joker-row-name{font-family:var(--font-display);font-weight:600;font-size:.85rem;color:var(--ivory);}
+  .joker-row-status{font-size:.75rem;color:rgba(247,241,225,.6);flex:1;min-width:110px;}
+  .joker-select{background:var(--ivory);border:1px solid var(--gold);border-radius:8px;padding:.35rem .5rem;font-family:var(--font-body);font-size:.8rem;color:var(--ink);}
+
+  /* ---------- MODAL ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(10,20,15,.72);display:flex;align-items:center;justify-content:center;padding:1.5rem;z-index:50;opacity:0;transition:opacity .25s ease;}
+  .modal-overlay[hidden]{display:none;}
+  .modal-overlay.visible{opacity:1;}
+  .modal-card{background:var(--ivory);color:var(--ink);border-radius:var(--radius-ui);padding:1.8rem 1.5rem;max-width:340px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5);transform:translateY(12px);transition:transform .25s ease;}
+  .modal-overlay.visible .modal-card{transform:translateY(0);}
+  .modal-joker-face{position:relative;width:108px;height:151px;margin:0 auto 1.1rem;}
+  .modal-card h3{font-family:var(--font-display);margin:0 0 .3rem;font-size:1.2rem;}
+  .modal-card p{margin:0 0 1rem;font-size:.85rem;color:rgba(23,20,16,.7);}
+  .modal-players{display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:.6rem;}
+
+  /* iPhone: safe areas, dynamic browser chrome and accessible touch controls. */
+  html{background:var(--felt);-webkit-text-size-adjust:100%;}
+  body{min-height:100vh;min-height:100svh;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);overflow-wrap:anywhere;}
+  [hidden]{display:none !important;}
+  button,select,input{font:inherit;}
+  button,select,[role="button"],summary{touch-action:manipulation;}
+  button,select,input,summary{min-height:44px;}
+  button,[role="button"],summary,.face{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  #screen-game{-webkit-user-select:none;user-select:none;}
+  input{-webkit-user-select:text;user-select:text;}
+  button:disabled{cursor:default;opacity:.5;}
+  .stepper-btn{width:44px;height:44px;flex-shrink:0;}
+  .name-row input,.joker-select{font-size:16px;}
+  .screen-setup{width:calc(100% - 2rem);margin:clamp(1rem,5vh,3rem) auto;}
+  .screen-game{padding-bottom:1.5rem;}
+  .piles-row{flex-wrap:nowrap;gap:clamp(1rem,5vw,1.8rem);}
+  .pile{width:clamp(100px,30vw,158px);}
+  .chip-discard{min-width:54px;min-height:44px;}
+  .seat-name,.seat-jokers,.joker-select{min-width:0;max-width:100%;}
+  .seat-name{overflow-wrap:anywhere;}
+  .seat-jokers{flex-basis:100%;justify-content:flex-start;}
+  .setup-note,.no-joker{color:#b7bbaa;}
+  .setup-sub,.table-hint,.name-row label,.seat-label{color:#bdc6b9;}
+  .name-row input::placeholder{color:#a8b6a7;}
+  .joker-row-status{color:#bdc6b9;}
+  .modal-overlay{padding:max(1rem,env(safe-area-inset-top)) max(1rem,env(safe-area-inset-right)) max(1rem,env(safe-area-inset-bottom)) max(1rem,env(safe-area-inset-left));}
+  .modal-card{max-height:100%;overflow-y:auto;overscroll-behavior:contain;color-scheme:light;}
+  .modal-card .btn-ghost{color:var(--ink);border-color:rgba(23,20,16,.4);}
+  .joker-face{position:absolute;}
+  .btn-player-choice{color:var(--ink);max-width:100%;}
+  body.modal-open{overflow:hidden;}
+  .app-footer,.install-guide{max-width:600px;margin:1rem auto;padding:0 1rem;font-size:.8rem;line-height:1.6;color:#bdc6b9;}
+  .app-footer{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:.4rem 1rem;padding-bottom:1rem;}
+  .app-footer p{margin:0;}
+  .text-button{border:0;background:transparent;color:var(--gold-bright);text-decoration:underline;text-underline-offset:3px;padding:.5rem;cursor:pointer;}
+  .install-guide{width:calc(100% - 2rem);border:1px solid rgba(201,162,75,.4);border-radius:16px;background:var(--felt-deep);padding:1rem;}
+  .install-guide h2{font-size:.95rem;}
+  .install-guide ol{padding-left:1.4rem;}
+  .install-guide strong{color:var(--ivory);}
+  .storage-notice{width:100%;text-align:center;color:var(--gold-bright);}
+  /* ---------- TURNI, REGOLE E CARTA GRANDE ---------- */
+  .turn-bar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;max-width:420px;margin:1.2rem auto 0;padding:.25rem;background:rgba(0,0,0,.22);border:1px solid rgba(201,162,75,.35);border-radius:999px;}
+  .turn-arrow{width:44px;height:44px;flex-shrink:0;border:0;border-radius:50%;background:transparent;color:var(--gold-bright);font-size:1.5rem;line-height:1;cursor:pointer;}
+  .turn-now{flex:1;min-width:0;margin:0;text-align:center;}
+  .turn-now .eyebrow{margin:0;font-size:.6rem;}
+  .turn-name{display:block;font-family:var(--font-display);font-weight:600;font-size:1.2rem;color:var(--ivory);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .player-seat.is-turn{border-color:var(--gold-bright);background:rgba(201,162,75,.12);box-shadow:inset 0 0 0 1px var(--gold-bright);}
+  .seat-turn{font-family:var(--font-mono);font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink);background:var(--gold-bright);border-radius:999px;padding:.2rem .55rem;}
+
+  .rules-editor{margin-top:1.4rem;padding:0 .9rem;border:1px solid rgba(201,162,75,.3);border-radius:12px;}
+  .rules-editor summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:var(--font-display);text-transform:uppercase;letter-spacing:.06em;font-size:.85rem;color:var(--gold-bright);}
+  .rules-editor summary::-webkit-details-marker{display:none;}
+  .rules-editor summary::after{content:'▾';color:var(--gold);transition:transform .2s ease;}
+  .rules-editor[open] summary::after{transform:rotate(180deg);}
+  .rules-toggle{display:flex;align-items:center;gap:.6rem;min-height:44px;font-size:.85rem;color:var(--ivory);cursor:pointer;}
+  .rules-toggle input{width:22px;height:22px;min-height:0;margin:0;flex-shrink:0;accent-color:var(--gold);}
+  .rules-help{margin:.2rem 0 .8rem;font-size:.78rem;line-height:1.5;color:#bdc6b9;}
+  .rule-row{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:.4rem .7rem;padding:.8rem 0;border-top:1px solid rgba(201,162,75,.18);}
+  .rule-rank{grid-row:span 2;padding-top:.45rem;text-align:center;font-family:var(--font-display);font-weight:700;font-size:1.25rem;color:var(--gold-bright);}
+  .rule-row input,.rule-row textarea{width:100%;padding:.55rem .7rem;background:rgba(247,241,225,.06);border:1px solid rgba(201,162,75,.3);border-radius:8px;color:var(--ivory);font-family:var(--font-body);font-size:16px;}
+  .rule-row input{font-weight:600;}
+  .rule-row textarea{min-height:64px;resize:vertical;line-height:1.4;}
+  .rule-row input::placeholder,.rule-row textarea::placeholder{color:#a8b6a7;}
+  .rule-row input:focus,.rule-row textarea:focus{outline:none;border-color:var(--gold-bright);background:rgba(247,241,225,.1);}
+  .rules-actions{padding:.2rem 0 1rem;}
+
+  .modal-joker-face{width:130px;height:182px;}
+  .modal-card .modal-rule{margin:.2rem 0 .9rem;color:var(--ink);line-height:1.45;}
+  .modal-rule strong{display:block;font-family:var(--font-display);font-size:1rem;color:var(--burgundy);}
+  .modal-card .text-button{color:var(--burgundy);display:block;margin:0 auto .3rem;}
+  .btn-player-choice.btn-gold{background:linear-gradient(160deg,var(--gold-bright),var(--gold));border-color:transparent;}
+  .reveal-face .figure-svg{height:76%;}
+  .reveal-card{width:100%;max-width:380px;max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding:1.3rem 1.2rem 1.2rem;text-align:center;color:var(--ivory);background:var(--felt-deep);border:1px solid rgba(201,162,75,.45);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.6);transform:translateY(12px);transition:transform .25s ease;}
+  .modal-overlay.visible .reveal-card{transform:none;}
+  .reveal-name{margin:0 0 .5rem;font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#bdc6b9;}
+  .reveal-face{position:relative;width:min(56vw,220px);aspect-ratio:5/7;margin:0 auto 1.1rem;container-type:inline-size;}
+  .reveal-face .face{box-shadow:0 18px 40px rgba(0,0,0,.55);}
+  .modal-overlay.visible .reveal-face .face{animation:revealFlip .45s cubic-bezier(.2,.8,.3,1.1);}
+  @keyframes revealFlip{from{opacity:0;transform:perspective(900px) rotateY(-100deg) scale(.85);}to{opacity:1;transform:none;}}
+  .reveal-face .card-face{padding:5cqw;}
+  .reveal-face .corner .rank{font-size:16cqw;}
+  .reveal-face .corner .suit{font-size:12cqw;}
+  .reveal-face .center-suit{font-size:44cqw;}
+  .reveal-card h3{margin:0 0 .4rem;font-family:var(--font-display);font-size:1.5rem;color:var(--gold-bright);}
+  .reveal-rule{margin:0 0 .4rem;font-size:1rem;line-height:1.5;}
+  .reveal-actions{display:flex;flex-wrap:wrap;gap:.6rem;justify-content:center;margin-top:1.2rem;}
+  .reveal-actions .btn{flex:1 1 auto;}
+  .wake-status{color:#bdc6b9;}
+
+  .setup-top{display:flex;align-items:flex-start;justify-content:space-between;gap:.8rem;}
+  .lang-switch{display:inline-flex;flex-shrink:0;padding:2px;border:1px solid rgba(201,162,75,.45);border-radius:999px;}
+  .lang-switch button{min-width:44px;padding:0 .7rem;border:0;border-radius:999px;background:transparent;color:var(--ivory);font-family:var(--font-mono);font-size:.75rem;letter-spacing:.08em;cursor:pointer;}
+  .lang-switch button[aria-pressed="true"]{background:var(--gold-bright);color:var(--ink);}
+  .setup-help{display:block;margin:.8rem auto 0;}
+  .effects{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;max-width:520px;margin:.8rem auto 0;}
+  .effect-chip{padding:.4rem .8rem;border:1px solid rgba(201,162,75,.5);border-radius:999px;background:rgba(124,31,42,.85);color:var(--ivory);font-size:.8rem;font-weight:600;text-align:center;}
+  .reveal-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin:.3rem 0 0;}
+  .reveal-badge{padding:.25rem .65rem;border-radius:999px;background:var(--gold-bright);color:var(--ink);font-family:var(--font-mono);font-size:.72rem;}
+  .reveal-badge.soft{background:rgba(247,241,225,.12);color:var(--gold-bright);}
+  .wheel{position:relative;width:min(64vw,250px);aspect-ratio:1;margin:0 auto 1rem;}
+  .wheel svg{display:block;width:100%;height:100%;transition:transform 2.6s cubic-bezier(.12,.7,.18,1);filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));}
+  .wheel-pointer{position:absolute;top:-6px;left:50%;z-index:1;width:0;height:0;transform:translateX(-50%);border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--gold-bright);filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+  .reveal-result{margin:.8rem 0 0;font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--ivory);}
+  .reveal-result.pop{animation:resultPop .35s ease-out;}
+  @keyframes resultPop{from{opacity:0;transform:scale(.6);}to{opacity:1;transform:none;}}
+  .wheel-tally{margin:.3rem 0 0;font-family:var(--font-mono);font-size:.8rem;color:var(--gold-bright);}
+  .reveal-tool{width:100%;margin-top:1rem;}
+  .help-card{max-width:440px;text-align:left;}
+  .help-card p{margin:0 0 .8rem;font-size:.92rem;line-height:1.55;}
+  .help-card h4{margin:1.1rem 0 .3rem;font-family:var(--font-display);font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-bright);}
+  .help-cards{margin:0 0 1rem;padding:0;list-style:none;}
+  .help-cards li{display:grid;grid-template-columns:2.4rem minmax(0,1fr);gap:.6rem;padding:.55rem 0;border-top:1px solid rgba(201,162,75,.18);}
+  .help-rank{text-align:center;font-family:var(--font-display);font-weight:700;font-size:1.1rem;color:var(--gold-bright);}
+  .help-cards strong{display:block;color:var(--ivory);}
+  .help-text{display:block;font-size:.85rem;line-height:1.45;color:#bdc6b9;}
+  .help-card .help-note{font-size:.8rem;font-style:italic;color:#bdc6b9;}
+
+  @media(hover:none){.deck-pile:hover{transform:none;}}
+  @media(max-width:360px){.screen-setup{padding:1.4rem 1rem;}.screen-game{padding-left:1rem;padding-right:1rem;}.table-header{gap:.7rem;}.btn-small{padding:.5rem .75rem;}.player-seat{padding:.75rem;}}
+  @media(max-height:560px){.modal-overlay{align-items:flex-start;}.modal-card{padding:1rem;}.modal-joker-face{width:72px;height:101px;margin-bottom:.6rem;}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important;scroll-behavior:auto !important;}}
+</style>
+</head>
+<body>
+
+<div id="live-announcer" class="sr-only" aria-live="polite"></div>
+
+<div id="app">
+
+  <!-- SCHERMATA DI CONFIGURAZIONE -->
+  <section id="screen-setup" class="screen screen-setup">
+    <div class="setup-top">
+      <p class="eyebrow" data-i18n="setupEyebrow">Prima di iniziare</p>
+      <div class="lang-switch" role="group" aria-label="Lingua" data-i18n-aria="lang">
+        <button type="button" data-lang="it" aria-pressed="true">IT</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+    <h1 class="setup-title" data-i18n="setupTitle">Chi siede al tavolo?</h1>
+    <p class="setup-sub" data-i18n="setupSub">Scegli quanti giocatori partecipano e, se vuoi, dai un nome a ciascuno.</p>
+    <p class="setup-note" data-i18n="setupNote">Il mazzo include 52 carte più due jolly.</p>
+
+    <div class="stepper">
+      <button id="count-minus" class="stepper-btn" type="button" aria-label="Riduci numero di giocatori" data-i18n-aria="countMinus">−</button>
+      <span class="stepper-value"><span id="count-display">4</span> <span id="count-unit">giocatori</span></span>
+      <button id="count-plus" class="stepper-btn" type="button" aria-label="Aumenta numero di giocatori" data-i18n-aria="countPlus">+</button>
+    </div>
+
+    <div id="name-inputs" class="name-inputs"></div>
+
+    <details id="rules-editor" class="rules-editor">
+      <summary data-i18n="rulesSummary">Regole delle carte</summary>
+      <label class="rules-toggle"><input id="rules-enabled" type="checkbox" checked> <span data-i18n="rulesToggle">Mostra la regola a ogni carta pescata</span></label>
+      <p class="rules-help" data-i18n="rulesHelp"></p>
+      <div id="rules-list"></div>
+      <div class="rules-actions"><button id="rules-reset" class="btn btn-ghost btn-small" type="button" data-i18n="rulesReset">Ripristina regole predefinite</button></div>
+    </details>
+
+    <button id="btn-start" class="btn btn-gold btn-block" type="button" data-i18n="start">Inizia la partita</button>
+    <button id="btn-help-setup" class="text-button setup-help" type="button" data-i18n="howToPlay">Come si gioca</button>
+  </section>
+
+  <!-- SCHERMATA DI GIOCO -->
+  <section id="screen-game" class="screen screen-game" hidden>
+    <header class="table-header">
+      <div class="table-title">
+        <p class="eyebrow" data-i18n="gameEyebrow">Mazzo completo · 54 carte</p>
+        <h1>Il Tavolo</h1>
+      </div>
+      <div class="header-actions">
+        <button id="btn-new-game" class="btn btn-ghost btn-small" type="button" data-i18n="newGame">↺ Nuova partita</button>
+        <button id="btn-help" class="btn btn-ghost btn-small" type="button" data-i18n="rulesButton">? Regole</button>
+        <button id="btn-undo" class="btn btn-ghost btn-small" type="button" disabled data-i18n="undo">↶ Annulla</button>
+        <button id="btn-reshuffle" class="btn btn-gold btn-small" type="button" data-i18n="reshuffle">⟲ Rimescola</button>
+      </div>
+    </header>
+
+    <div id="turn-bar" class="turn-bar">
+      <button id="turn-prev" class="turn-arrow" type="button" aria-label="Turno al giocatore precedente" data-i18n-aria="turnPrev">‹</button>
+      <p class="turn-now" aria-live="polite"><span class="eyebrow" data-i18n="turnNow">Tocca a</span><span id="turn-name" class="turn-name"></span></p>
+      <button id="turn-next" class="turn-arrow" type="button" aria-label="Turno al giocatore successivo" data-i18n-aria="turnNext">›</button>
+    </div>
+    <div id="effects" class="effects" hidden></div>
+
+    <div class="piles-row">
+      <div class="pile-block">
+        <div class="pile-label" data-i18n="deck">Mazzo</div>
+        <div id="deck-pile" class="pile deck-pile" tabindex="0" role="button" aria-label="Pesca una carta" data-i18n-aria="drawCard"></div>
+        <div id="deck-count" class="pile-count">54 carte</div>
+      </div>
+      <div class="pile-block">
+        <div class="pile-label" data-i18n="discard">Scarti</div>
+        <div id="discard-pile" class="pile discard-pile" role="img" aria-label="Nessuno scarto ancora"></div>
+        <div id="discard-count" class="pile-count">0 carte</div>
+      </div>
+    </div>
+    <p class="table-hint" data-i18n="hint"></p>
+
+    <details class="jokers-panel" id="jokers-panel" hidden>
+      <summary class="jokers-summary"><span data-i18n="jokersInPlay">Jolly in gioco</span> <span id="jokers-count-badge" class="jokers-badge is-empty">nessun jolly</span></summary>
+      <div id="jokers-list" class="jokers-body"></div>
+    </details>
+
+    <section class="players-panel">
+      <h2 data-i18n="players">Giocatori</h2>
+      <div id="players-list" class="players-list"></div>
+    </section>
+  </section>
+
+</div>
+
+<aside id="install-guide" class="install-guide" aria-labelledby="install-title" hidden>
+  <h2 id="install-title" data-i18n="installTitle">Il Tavolo sul tuo iPhone</h2>
+  <ol data-i18n-html="installSteps"></ol>
+  <button id="dismiss-install" class="btn btn-ghost btn-small" type="button" data-i18n="installOk">Ho capito</button>
+</aside>
+<footer class="app-footer">
+  <p id="offline-status" role="status">Preparazione offline…</p>
+  <button id="update-app" class="text-button" type="button" hidden data-i18n="updateApp">Aggiorna l’app</button>
+  <button id="show-install" class="text-button" type="button" hidden data-i18n="installLink">Installazione iPhone</button>
+  <div class="lang-switch" role="group" aria-label="Lingua" data-i18n-aria="lang">
+    <button type="button" data-lang="it" aria-pressed="true">IT</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
+  </div>
+  <p id="wake-status" class="wake-status" hidden data-i18n="wakeOn">Schermo sempre acceso durante la partita</p>
+  <p id="storage-notice" class="storage-notice" role="status" hidden></p>
+</footer>
+<noscript><p class="install-guide">Attiva JavaScript per usare il mazzo di carte. · Turn on JavaScript to use the deck of cards.</p></noscript>
+
+<!-- MODALE ASSEGNAZIONE JOLLY -->
+<div id="joker-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-description" hidden>
+  <div class="modal-card">
+    <div id="modal-joker-face" class="modal-joker-face"></div>
+    <h3 id="modal-title"></h3>
+    <p id="modal-rule" class="modal-rule" hidden></p>
+    <p id="modal-description" data-i18n="jokerAssignQ">A chi lo assegni?</p>
+    <div id="modal-players" class="modal-players"></div>
+    <button id="modal-undo" class="text-button" type="button" data-i18n="undoDraw">↶ Annulla pescata</button>
+    <button id="modal-skip" class="btn btn-ghost btn-small" type="button" data-i18n="skipJoker">Scarta senza assegnare</button>
+  </div>
+</div>
+
+<!-- CARTA PESCATA -->
+<div id="card-reveal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reveal-title" aria-describedby="reveal-name reveal-rule" hidden>
+  <div class="reveal-card">
+    <p id="reveal-name" class="reveal-name"></p>
+    <div id="reveal-face" class="reveal-face" aria-hidden="true"></div>
+    <div id="reveal-wheel" class="wheel" aria-hidden="true" hidden>
+      <div class="wheel-pointer"></div>
+      <svg id="wheel-svg" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <h3 id="reveal-title"></h3>
+    <p id="reveal-rule" class="reveal-rule"></p>
+    <div id="reveal-badges" class="reveal-badges" hidden></div>
+    <p id="reveal-result" class="reveal-result" hidden></p>
+    <p id="wheel-tally" class="wheel-tally" hidden></p>
+    <button id="reveal-tool" class="btn btn-gold reveal-tool" type="button" hidden></button>
+    <div class="reveal-actions">
+      <button id="reveal-undo" class="btn btn-ghost" type="button" data-i18n="undo">↶ Annulla</button>
+      <button id="reveal-close" class="btn btn-gold" type="button">Continua</button>
+    </div>
+  </div>
+</div>
+
+<!-- COME SI GIOCA -->
+<div id="help-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title" hidden>
+  <div class="reveal-card help-card">
+    <h3 id="help-title" data-i18n="helpTitle">Come si gioca</h3>
+    <div id="help-body"></div>
+    <div class="reveal-actions"><button id="help-close" class="btn btn-gold" type="button" data-i18n="close">Chiudi</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // U+FE0E asks for the text glyph: without it iOS draws ♥ and ♦ as red emoji.
+  var SUITS = [
+    { key:'picche', symbol:'♠\uFE0E', color:'black' },
+    { key:'cuori',  symbol:'♥\uFE0E', color:'red'   },
+    { key:'quadri', symbol:'♦\uFE0E', color:'red'   },
+    { key:'fiori',  symbol:'♣\uFE0E', color:'black' }
+  ];
+  var RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  var LANGS = ['it','en'];
+
+  /* ---------- TESTI ---------- */
+  var STRINGS = {
+    it: {
+      title:'Il Tavolo — Mazzo di carte',
+      description:'Il gioco di carte da tavolo con la regola di ogni carta, da uno a otto amici. Funziona anche offline.',
+      lang:'Lingua',
+      setupEyebrow:'Prima di iniziare',
+      setupTitle:'Chi siede al tavolo?',
+      setupSub:'Scegli quanti giocatori partecipano e, se vuoi, dai un nome a ciascuno nell’ordine in cui siete seduti.',
+      setupNote:'Il mazzo include 52 carte più due jolly.',
+      countMinus:'Riduci numero di giocatori',
+      countPlus:'Aumenta numero di giocatori',
+      playersUnit:function(n){ return n === 1 ? 'giocatore' : 'giocatori'; },
+      playerN:function(n){ return 'Giocatore ' + n; },
+      rulesSummary:'Regole delle carte',
+      rulesToggle:'Mostra la regola a ogni carta pescata',
+      rulesHelp:'Puoi cambiare il testo di ogni carta. Le modifiche restano su questo dispositivo, separate per italiano e inglese.',
+      rulesReset:'Ripristina regole predefinite',
+      ruleTitleLabel:function(c){ return 'Nome della regola: ' + c; },
+      ruleTextLabel:function(c){ return 'Descrizione della regola: ' + c; },
+      ruleTextPlaceholder:'Descrizione (facoltativa)',
+      confirmRulesReset:'Ripristinare le regole predefinite in italiano? Le tue modifiche andranno perse.',
+      start:'Inizia la partita',
+      howToPlay:'Come si gioca',
+      gameEyebrow:'Mazzo completo · 54 carte',
+      newGame:'↺ Nuova partita',
+      rulesButton:'? Regole',
+      undo:'↶ Annulla',
+      reshuffle:'⟲ Rimescola',
+      turnPrev:'Turno al giocatore precedente',
+      turnNext:'Turno al giocatore successivo',
+      turnNow:'Tocca a',
+      deck:'Mazzo',
+      discard:'Scarti',
+      drawCard:'Pesca una carta',
+      cards:function(n){ return n === 1 ? '1 carta' : n + ' carte'; },
+      emptyDeck:'Mazzo vuoto\nrimescola per continuare',
+      noDiscard:'Nessuno scarto ancora',
+      hint:'Tocca il mazzo per pescare. Le carte restano negli scarti finché non rimescoli; i jolly restano in mano finché non li scarti.',
+      jokersInPlay:'Jolly in gioco',
+      noJokerBadge:'nessun jolly',
+      jokersHeld:function(n){ return n + ' in mano'; },
+      players:'Giocatori',
+      seat:function(n){ return 'Posto ' + n; },
+      onTurn:'Di turno',
+      noJoker:'Nessun jolly',
+      discardBtn:'Scarta',
+      discardJokerOf:function(j, p){ return 'Scarta ' + j + ' di ' + p; },
+      heldBy:function(p){ return 'In mano a ' + p; },
+      assignJoker:function(j){ return 'Assegna ' + j; },
+      installTitle:'Il Tavolo sul tuo iPhone',
+      installSteps:'<li>Apri l’indirizzo del gioco in <strong>Safari</strong>.</li>' +
+        '<li>Tocca <strong>Condividi</strong> (il quadrato con la freccia verso l’alto; se serve, apri prima il menu della pagina).</li>' +
+        '<li>Scegli <strong>Aggiungi alla schermata Home</strong>.</li>' +
+        '<li>Attiva <strong>Apri come app web</strong>, se compare, e tocca <strong>Aggiungi</strong>.</li>' +
+        '<li>Avvia <strong>Il Tavolo</strong> dalla schermata Home. La prima volta aprilo online e attendi «Disponibile offline».</li>',
+      installOk:'Ho capito',
+      offlinePreparing:'Preparazione offline…',
+      offlineNeedsHttps:'Per installare e usare il gioco offline, apri il sito tramite HTTPS.',
+      offlineReady:'Disponibile offline',
+      offlineNow:'Sei offline · il tavolo è pronto',
+      offlineRetryReopen:'Offline non ancora pronto. Riconnettiti e riapri il gioco.',
+      offlineRetryReload:'Offline non ancora pronto. Riconnettiti e ricarica il gioco.',
+      updateApp:'Aggiorna l’app',
+      updating:'Aggiornamento…',
+      installLink:'Installazione iPhone',
+      wakeOn:'Schermo sempre acceso durante la partita',
+      storageUnavailable:'Il salvataggio non è disponibile. Tieni aperta questa pagina per conservare la partita.',
+      storageCorrupt:'Non è stato possibile recuperare la partita salvata. Puoi iniziarne una nuova.',
+      jokerDrewBy:function(p, j){ return p + ' ha pescato il ' + j + '!'; },
+      jokerDrew:function(j){ return 'Hai pescato il ' + j + '!'; },
+      jokerAssignQ:'A chi lo assegni?',
+      undoDraw:'↶ Annulla pescata',
+      skipJoker:'Scarta senza assegnare',
+      continueBtn:'Continua',
+      turnOf:function(p){ return 'Tocca a ' + p; },
+      doubledCard:function(m){ return 'Effetto ×' + m + ' per il Re'; },
+      doubleNext:function(m){ return 'Prossima carta ×' + m; },
+      queenActive:function(p, n){ return 'Donna: chi guarda ' + p + ' beve · ' + (n === 1 ? 'ancora 1 pescata' : 'ancora ' + n + ' pescate'); },
+      queenStarted:function(n){ return n === 1 ? 'Vale per la prossima pescata' : 'Vale per le prossime ' + n + ' pescate'; },
+      wheelSpin:function(i, n){ return 'Gira la ruota · ' + i + ' di ' + n; },
+      wheelSpinning:'La ruota gira…',
+      wheelResult:function(p){ return 'Beve ' + p + '!'; },
+      wheelAnnounce:function(i, p){ return 'Giro ' + i + ': beve ' + p + '.'; },
+      wheelTally:function(list){ return 'Finora: ' + list; },
+      coinFlip:'Lancia la moneta',
+      parityDraw:'Estrai pari o dispari',
+      tossing:'…',
+      heads:'Testa!',
+      tails:'Croce!',
+      even:'Pari!',
+      odd:'Dispari!',
+      drew:function(p, c){ return p + ' ha pescato: ' + c + '.'; },
+      emptyDeckAnnounce:'Il mazzo è vuoto. Rimescola per continuare.',
+      reshuffled:'Il mazzo è stato rimescolato. I jolly in mano ai giocatori restano dove sono finché non vengono scartati.',
+      jokerSkipped:'Jolly scartato senza assegnarlo.',
+      jokerAssigned:function(j, p){ return j + ' assegnato a ' + p + '.'; },
+      jokerDiscarded:'Jolly scartato.',
+      resumed:'Partita ripresa.',
+      queenExpired:function(p){ return 'La Donna di ' + p + ' è finita.'; },
+      nothingToUndo:'Niente da annullare',
+      undoAria:function(l){ return 'Annulla ' + l; },
+      undone:function(l, p){ return 'Annullata ' + l + '. Tocca a ' + p + '.'; },
+      actionDraw:function(c){ return 'la pescata di ' + c; },
+      actionShuffle:'il rimescolamento',
+      actionAssign:function(j){ return 'l’assegnazione del ' + j; },
+      actionDiscard:function(j){ return 'lo scarto del ' + j; },
+      confirmNewGame:'Vuoi tornare alla configurazione? La partita in corso andrà persa.',
+      helpTitle:'Come si gioca',
+      helpParas:[
+        'Sedetevi in cerchio nell’ordine dei giocatori. Chi è indicato in «Tocca a» tocca il mazzo e pesca una carta: l’effetto vale subito, poi il turno passa al giocatore successivo.',
+        'Il Re raddoppia l’effetto della carta successiva e l’app lo segnala con «×2». Con il 5 e il 6 l’app gira la ruota dei nomi; con il 7 e il 9 chi pesca sceglie testa o croce, pari o dispari, e l’app estrae il risultato.',
+        'La Donna resta attiva per un giro completo, finché non tocca di nuovo a chi l’ha pescata, o finché qualcun altro non pesca una Donna.',
+        'Il jolly resta in mano a chi lo pesca: quando è il suo turno può usarlo per passare a un altro giocatore la carta pescata, poi lo scarta.',
+        'Quando il mazzo finisce, tocca «Rimescola». Se tocchi per sbaglio, usa «Annulla».'
+      ],
+      helpCards:'Le carte',
+      helpNote:'Giocate solo se maggiorenni e bevete responsabilmente: un sorso può sempre diventare acqua o un pegno.',
+      close:'Chiudi',
+      ranks:{ A:'Asso', J:'Fante', Q:'Donna', K:'Re' },
+      suits:{ picche:'Picche', cuori:'Cuori', quadri:'Quadri', fiori:'Fiori' },
+      cardOf:function(r, s){ return r + ' di ' + s; },
+      jokerNames:{ rosso:'Jolly Rosso', nero:'Jolly Nero' },
+      jokerWord:'JOLLY',
+      jokerLabel:'Jolly'
+    },
+    en: {
+      title:'Il Tavolo — Deck of cards',
+      description:'The table card game with a rule for every card, for one to eight friends. Works offline too.',
+      lang:'Language',
+      setupEyebrow:'Before you start',
+      setupTitle:'Who’s at the table?',
+      setupSub:'Choose how many people are playing and, if you like, name each of them in seating order.',
+      setupNote:'The deck has 52 cards plus two jokers.',
+      countMinus:'Fewer players',
+      countPlus:'More players',
+      playersUnit:function(n){ return n === 1 ? 'player' : 'players'; },
+      playerN:function(n){ return 'Player ' + n; },
+      rulesSummary:'Card rules',
+      rulesToggle:'Show the rule for every card drawn',
+      rulesHelp:'You can change the text of every card. Changes stay on this device, separately for Italian and English.',
+      rulesReset:'Restore default rules',
+      ruleTitleLabel:function(c){ return 'Rule name: ' + c; },
+      ruleTextLabel:function(c){ return 'Rule description: ' + c; },
+      ruleTextPlaceholder:'Description (optional)',
+      confirmRulesReset:'Restore the default English rules? Your changes will be lost.',
+      start:'Start the game',
+      howToPlay:'How to play',
+      gameEyebrow:'Full deck · 54 cards',
+      newGame:'↺ New game',
+      rulesButton:'? Rules',
+      undo:'↶ Undo',
+      reshuffle:'⟲ Shuffle',
+      turnPrev:'Turn to the previous player',
+      turnNext:'Turn to the next player',
+      turnNow:'Now playing',
+      deck:'Deck',
+      discard:'Discard',
+      drawCard:'Draw a card',
+      cards:function(n){ return n === 1 ? '1 card' : n + ' cards'; },
+      emptyDeck:'Deck empty\nshuffle to continue',
+      noDiscard:'No discards yet',
+      hint:'Tap the deck to draw. Cards stay in the discard pile until you shuffle; jokers stay in hand until they are discarded.',
+      jokersInPlay:'Jokers in play',
+      noJokerBadge:'no jokers',
+      jokersHeld:function(n){ return n + ' in hand'; },
+      players:'Players',
+      seat:function(n){ return 'Seat ' + n; },
+      onTurn:'Playing',
+      noJoker:'No joker',
+      discardBtn:'Discard',
+      discardJokerOf:function(j, p){ return 'Discard ' + j + ' held by ' + p; },
+      heldBy:function(p){ return 'Held by ' + p; },
+      assignJoker:function(j){ return 'Give ' + j + ' to'; },
+      installTitle:'Il Tavolo on your iPhone',
+      installSteps:'<li>Open the game’s address in <strong>Safari</strong>.</li>' +
+        '<li>Tap <strong>Share</strong> (the square with the arrow pointing up; if needed, open the page menu first).</li>' +
+        '<li>Choose <strong>Add to Home Screen</strong>.</li>' +
+        '<li>Turn on <strong>Open as Web App</strong>, if it appears, and tap <strong>Add</strong>.</li>' +
+        '<li>Open <strong>Il Tavolo</strong> from the Home Screen. The first time, open it online and wait for “Available offline”.</li>',
+      installOk:'Got it',
+      offlinePreparing:'Getting ready for offline…',
+      offlineNeedsHttps:'To install the game and play offline, open the site over HTTPS.',
+      offlineReady:'Available offline',
+      offlineNow:'You’re offline · the table is ready',
+      offlineRetryReopen:'Offline isn’t ready yet. Reconnect and reopen the game.',
+      offlineRetryReload:'Offline isn’t ready yet. Reconnect and reload the game.',
+      updateApp:'Update the app',
+      updating:'Updating…',
+      installLink:'Install on iPhone',
+      wakeOn:'The screen stays on during the game',
+      storageUnavailable:'Saving isn’t available. Keep this page open to keep your game.',
+      storageCorrupt:'The saved game couldn’t be recovered. You can start a new one.',
+      jokerDrewBy:function(p, j){ return p + ' drew the ' + j + '!'; },
+      jokerDrew:function(j){ return 'You drew the ' + j + '!'; },
+      jokerAssignQ:'Who gets it?',
+      undoDraw:'↶ Undo draw',
+      skipJoker:'Discard without giving it',
+      continueBtn:'Continue',
+      turnOf:function(p){ return p + '’s turn'; },
+      doubledCard:function(m){ return '×' + m + ' effect from the King'; },
+      doubleNext:function(m){ return 'Next card ×' + m; },
+      queenActive:function(p, n){ return 'Queen: whoever looks at ' + p + ' drinks · ' + (n === 1 ? '1 more draw' : n + ' more draws'); },
+      queenStarted:function(n){ return n === 1 ? 'Lasts for the next draw' : 'Lasts for the next ' + n + ' draws'; },
+      wheelSpin:function(i, n){ return 'Spin the wheel · ' + i + ' of ' + n; },
+      wheelSpinning:'Spinning…',
+      wheelResult:function(p){ return p + ' drinks!'; },
+      wheelAnnounce:function(i, p){ return 'Spin ' + i + ': ' + p + ' drinks.'; },
+      wheelTally:function(list){ return 'So far: ' + list; },
+      coinFlip:'Flip the coin',
+      parityDraw:'Draw odds or evens',
+      tossing:'…',
+      heads:'Heads!',
+      tails:'Tails!',
+      even:'Evens!',
+      odd:'Odds!',
+      drew:function(p, c){ return p + ' drew: ' + c + '.'; },
+      emptyDeckAnnounce:'The deck is empty. Shuffle to continue.',
+      reshuffled:'The deck has been shuffled. Jokers held by players stay with them until they are discarded.',
+      jokerSkipped:'Joker discarded without giving it to anyone.',
+      jokerAssigned:function(j, p){ return j + ' given to ' + p + '.'; },
+      jokerDiscarded:'Joker discarded.',
+      resumed:'Game resumed.',
+      queenExpired:function(p){ return p + '’s Queen is over.'; },
+      nothingToUndo:'Nothing to undo',
+      undoAria:function(l){ return 'Undo ' + l; },
+      undone:function(l, p){ return 'Undid ' + l + '. ' + p + '’s turn.'; },
+      actionDraw:function(c){ return 'drawing the ' + c; },
+      actionShuffle:'the shuffle',
+      actionAssign:function(j){ return 'giving the ' + j; },
+      actionDiscard:function(j){ return 'discarding the ' + j; },
+      confirmNewGame:'Go back to setup? The current game will be lost.',
+      helpTitle:'How to play',
+      helpParas:[
+        'Sit in a circle in player order. The player shown under “Now playing” taps the deck and draws a card: its effect applies straight away, then the turn passes to the next player.',
+        'The King doubles the effect of the next card, and the app marks it “×2”. With a 5 or a 6 the app spins the wheel of names; with a 7 or a 9 the player calls heads or tails, odds or evens, and the app draws the result.',
+        'The Queen stays active for one full round, until it’s the drawer’s turn again, or until someone else draws a Queen.',
+        'A joker stays with whoever draws it: on their turn they can use it to pass the card they drew to another player, then discard it.',
+        'When the deck runs out, tap “Shuffle”. Tapped by mistake? Use “Undo”.'
+      ],
+      helpCards:'The cards',
+      helpNote:'Play only if you are of legal drinking age, and drink responsibly: a sip can always become water or a forfeit.',
+      close:'Close',
+      ranks:{ A:'Ace', J:'Jack', Q:'Queen', K:'King' },
+      suits:{ picche:'Spades', cuori:'Hearts', quadri:'Diamonds', fiori:'Clubs' },
+      cardOf:function(r, s){ return r + ' of ' + s; },
+      jokerNames:{ rosso:'Red Joker', nero:'Black Joker' },
+      jokerWord:'JOKER',
+      jokerLabel:'Joker'
+    }
+  };
+
+  /* One rule per rank plus the jokers, in both languages. */
+  var RULE_KEYS = RANKS.concat(['JOLLY']);
+  var DEFAULT_RULES = {
+    it: {
+      'A':  { title:'Bevono tutti', text:'Tutto il tavolo beve.' },
+      '2':  { title:'Salvo', text:'Non succede niente.' },
+      '3':  { title:'Bevi tu', text:'' },
+      '4':  { title:'Scegli tu', text:'Non bevi: scegli chi beve.' },
+      '5':  { title:'Due ruote', text:'La ruota gira 2 volte tra tutti i giocatori: a ogni giro, chi esce beve.' },
+      '6':  { title:'Cinque ruote', text:'La ruota gira 5 volte tra tutti i giocatori: a ogni giro, chi esce beve.' },
+      '7':  { title:'Testa o croce', text:'Scegli testa o croce e lancia la moneta: se sbagli, bevi.' },
+      '8':  { title:'Tu e chi hai davanti', text:'Bevi tu e chi ti sta davanti.' },
+      '9':  { title:'Pari o dispari', text:'Scegli pari o dispari ed estrai: se sbagli, bevi.' },
+      '10': { title:'Bevi due volte', text:'' },
+      'J':  { title:'Tu e i vicini', text:'Bevi tu e chi ti sta accanto.' },
+      'Q':  { title:'Donna', text:'Per un giro completo, o finché qualcun altro non pesca una Donna, chi ti guarda beve.' },
+      'K':  { title:'Re', text:'Raddoppia l’effetto della prossima carta.' },
+      'JOLLY': { title:'Jolly', text:'Tienilo: quando è il tuo turno puoi usarlo per passare la carta pescata a qualcun altro.' }
+    },
+    en: {
+      'A':  { title:'Everyone drinks', text:'The whole table drinks.' },
+      '2':  { title:'Safe', text:'Nothing happens.' },
+      '3':  { title:'You drink', text:'' },
+      '4':  { title:'You choose', text:'You don’t drink: choose who drinks.' },
+      '5':  { title:'Two spins', text:'The wheel spins twice among all the players: on every spin, whoever it lands on drinks.' },
+      '6':  { title:'Five spins', text:'The wheel spins five times among all the players: on every spin, whoever it lands on drinks.' },
+      '7':  { title:'Heads or tails', text:'Call heads or tails and flip the coin: if you’re wrong, you drink.' },
+      '8':  { title:'You and across', text:'You and the player sitting opposite you drink.' },
+      '9':  { title:'Odds or evens', text:'Call odds or evens and draw: if you’re wrong, you drink.' },
+      '10': { title:'Drink twice', text:'' },
+      'J':  { title:'You and your neighbours', text:'You and the players next to you drink.' },
+      'Q':  { title:'Queen', text:'For one full round, or until someone else draws a Queen, whoever looks at you drinks.' },
+      'K':  { title:'King', text:'Doubles the effect of the next card.' },
+      'JOLLY': { title:'Joker', text:'Keep it: on your turn you can use it to pass the card you drew to someone else.' }
+    }
+  };
+  /* Cards whose effect the app plays out. Tied to the rank, shown only while rules are on. */
+  var TOOLS = { '5':{ type:'wheel', spins:2 }, '6':{ type:'wheel', spins:5 }, '7':{ type:'coin' }, '9':{ type:'parity' } };
+  var RULE_TITLE_MAX = 30, RULE_TEXT_MAX = 200;
+  var UNDO_LIMIT = 30;
+  var DOUBLES = [1, 2, 4, 8, 16];
+
+  var lang = 'it';
+  function t(key){
+    var value = STRINGS[lang][key];
+    return typeof value === 'function' ? value.apply(null, Array.prototype.slice.call(arguments, 1)) : value;
+  }
+
+  function defaultRules(language){
+    var items = {};
+    RULE_KEYS.forEach(function(k){ items[k] = { title:DEFAULT_RULES[language][k].title, text:DEFAULT_RULES[language][k].text }; });
+    return items;
+  }
+
+  var rules = { enabled:true, items:{ it:defaultRules('it'), en:defaultRules('en') } };
+
+  var state = {
+    players: [],
+    allCardsById: {},
+    deck: [],
+    discard: [],
+    jokerHolders: {},
+    pendingJokerAssignment: null,
+    turn: 0,
+    lastDrawer: null,
+    double: 1,
+    queen: null,
+    undo: []
+  };
+
+  var playerCount = 4;
+  var currentScreen = 'setup';
+  var shuffling = false;
+  var storageNoticeKey = null;
+  var saveKey = 'il-tavolo:game:' + new URL('./', document.baseURI).pathname;
+
+  /* A complete snapshot is saved after every action, before iOS can suspend us. */
+  function saveProgress(){
+    try {
+      localStorage.setItem(saveKey, JSON.stringify({
+        version:3, lang:lang, screen:currentScreen, playerCount:playerCount,
+        names:getPlayerNamesFromInputs(), rules:rules,
+        game:currentScreen === 'game' ? {
+          players:state.players, deck:state.deck, discard:state.discard,
+          jokerHolders:state.jokerHolders, pendingJokerAssignment:state.pendingJokerAssignment,
+          turn:state.turn, lastDrawer:state.lastDrawer, double:state.double, queen:state.queen, undo:state.undo
+        } : null
+      }));
+      return true;
+    } catch (error) {
+      storageNotice('storageUnavailable');
+      return false;
+    }
+  }
+
+  function storageNotice(key){
+    var notice = document.getElementById('storage-notice');
+    storageNoticeKey = key;
+    notice.textContent = t(key);
+    notice.hidden = false;
+  }
+
+  function isSeat(value, count){
+    return Number.isInteger(value) && value >= 0 && value < count;
+  }
+
+  function isValidRules(saved){
+    return !!saved && typeof saved === 'object' && typeof saved.enabled === 'boolean' &&
+      !!saved.items && typeof saved.items === 'object' &&
+      LANGS.every(function(language){
+        var set = saved.items[language];
+        return !!set && typeof set === 'object' && RULE_KEYS.every(function(k){
+          var item = set[k];
+          return !!item && typeof item.title === 'string' && item.title.length <= RULE_TITLE_MAX &&
+            typeof item.text === 'string' && item.text.length <= RULE_TEXT_MAX;
+        });
+      });
+  }
+
+  function isValidQueen(queen, count){
+    return queen === null || (!!queen && typeof queen === 'object' && isSeat(queen.holder, count) &&
+      Number.isInteger(queen.left) && queen.left >= 1 && queen.left <= DOUBLES[DOUBLES.length - 1] * 8);
+  }
+
+  /* Throws unless every one of the 54 cards is in exactly one place. */
+  function checkGame(game, count, cards){
+    if (!game || !Array.isArray(game.players) || game.players.length !== count ||
+        !Array.isArray(game.deck) || !Array.isArray(game.discard) ||
+        !game.jokerHolders || typeof game.jokerHolders !== 'object' || Array.isArray(game.jokerHolders) ||
+        !(game.pendingJokerAssignment === null || ['j-rosso','j-nero'].indexOf(game.pendingJokerAssignment) !== -1) ||
+        !isSeat(game.turn, count) || DOUBLES.indexOf(game.double) === -1 || !isValidQueen(game.queen, count)) throw new Error('Invalid game');
+    var held = {};
+    var positions = game.deck.concat(game.discard);
+    game.players.forEach(function(p, i){
+      if (!p || p.id !== 'p'+i || typeof p.name !== 'string' || !p.name.trim() || p.name.length > 20 ||
+          !Array.isArray(p.jokers) || p.jokers.length > 2) throw new Error('Invalid player');
+      p.jokers.forEach(function(id){
+        if (['j-rosso','j-nero'].indexOf(id) === -1 || held[id] || game.jokerHolders[id] !== p.id) throw new Error('Invalid holder');
+        held[id] = p.id;
+        positions.push(id);
+      });
+    });
+    if (Object.keys(game.jokerHolders).length !== Object.keys(held).length) throw new Error('Invalid holders');
+    if (game.pendingJokerAssignment) positions.push(game.pendingJokerAssignment);
+    if (positions.length !== 54 || new Set(positions).size !== 54 || !positions.every(function(id){ return typeof id === 'string' && Object.prototype.hasOwnProperty.call(cards,id); })) throw new Error('Invalid deck');
+  }
+
+  function isValidSnapshot(snap, players, count, cards){
+    try {
+      var action = snap && snap.action;
+      if (!action || ['draw','shuffle','assign','discard'].indexOf(action.type) === -1 ||
+          !(action.card === null || Object.prototype.hasOwnProperty.call(cards, action.card)) ||
+          !Array.isArray(snap.jokers) || snap.jokers.length !== count) return false;
+      checkGame({
+        players:players.map(function(p, i){ return { id:p.id, name:p.name, jokers:snap.jokers[i] }; }),
+        deck:snap.deck, discard:snap.discard, jokerHolders:snap.jokerHolders,
+        pendingJokerAssignment:null, turn:snap.turn, double:snap.double, queen:snap.queen
+      }, count, cards);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function restoreProgress(){
+    try {
+      var raw = localStorage.getItem(saveKey);
+      if (!raw) return;
+      var saved = JSON.parse(raw);
+      if ([1,2,3].indexOf(saved.version) === -1 || !Number.isInteger(saved.playerCount) || saved.playerCount < 1 || saved.playerCount > 8 ||
+          !Array.isArray(saved.names) || saved.names.length !== saved.playerCount ||
+          !saved.names.every(function(n){ return typeof n === 'string' && n.length <= 20; }) ||
+          ['setup','game'].indexOf(saved.screen) === -1) throw new Error('Invalid save');
+      // Rules saved before version 3 were placeholders: the real game rules replace them.
+      if (saved.version === 3 && isValidRules(saved.rules)) rules = saved.rules;
+      if (saved.screen === 'game') {
+        var game = saved.game;
+        var cards = {};
+        buildFullDeck().forEach(function(c){ cards[c.id] = c; });
+        if (game && typeof game === 'object') {
+          // Older saves predate turns, undo, the King and the Queen: resume them from a clean table.
+          if (saved.version === 1) { game.turn = 0; game.lastDrawer = null; game.undo = []; }
+          if (saved.version < 3) { game.double = 1; game.queen = null; }
+        }
+        checkGame(game, saved.playerCount, cards);
+        var undo = Array.isArray(game.undo) ? game.undo.filter(function(snap){
+          return isValidSnapshot(snap, game.players, saved.playerCount, cards);
+        }).slice(-UNDO_LIMIT) : [];
+        state = {players:game.players, allCardsById:cards, deck:game.deck, discard:game.discard,
+          jokerHolders:game.jokerHolders, pendingJokerAssignment:game.pendingJokerAssignment,
+          turn:game.turn, lastDrawer:isSeat(game.lastDrawer, saved.playerCount) ? game.lastDrawer : null,
+          double:game.double, queen:game.queen, undo:undo};
+      }
+      playerCount = saved.playerCount;
+      renderNameInputs();
+      saved.names.forEach(function(name,i){ document.getElementById('name-'+i).value = name; });
+      updateStepperButtons();
+      if (saved.screen === 'game') {
+        showScreen('game');
+        renderDeckPile(); renderDiscardPile(false); renderTurn(); renderJokerPanel();
+        if (state.pendingJokerAssignment) openJokerModal(state.pendingJokerAssignment);
+        announceText(t('resumed'));
+      }
+    } catch (error) {
+      storageNotice('storageCorrupt');
+    }
+  }
+
+  /* ---------- LINGUA ---------- */
+  function initialLanguage(){
+    try {
+      var saved = JSON.parse(localStorage.getItem(saveKey) || 'null');
+      if (saved && LANGS.indexOf(saved.lang) !== -1) return saved.lang;
+    } catch (error) { /* Fall back to the device language. */ }
+    var preferred = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+    return /^it\b/i.test(preferred) ? 'it' : 'en';
+  }
+
+  function applyStaticText(){
+    document.documentElement.lang = lang;
+    document.title = t('title');
+    document.querySelector('meta[name="description"]').setAttribute('content', t('description'));
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function(el){ el.textContent = t(el.getAttribute('data-i18n')); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-html]'), function(el){ el.innerHTML = t(el.getAttribute('data-i18n-html')); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function(el){ el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria'))); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-lang]'), function(btn){ btn.setAttribute('aria-pressed', btn.getAttribute('data-lang') === lang ? 'true' : 'false'); });
+    document.getElementById('count-unit').textContent = t('playersUnit', playerCount);
+    if (storageNoticeKey) document.getElementById('storage-notice').textContent = t(storageNoticeKey);
+  }
+
+  function setLanguage(next){
+    if (LANGS.indexOf(next) === -1 || next === lang) return;
+    lang = next;
+    applyStaticText();
+    // Players left unnamed in setup get the default name of the new language.
+    var names = getPlayerNamesFromInputs();
+    state.players.forEach(function(p, i){ if (!names[i]) p.name = t('playerN', i + 1); });
+    renderNameInputs();
+    renderRulesEditor();
+    if (currentScreen === 'game') {
+      if (!document.getElementById('card-reveal').hidden) hideReveal();
+      renderDeckPile(); renderDiscardPile(false); renderTurn(); renderJokerPanel();
+      if (state.pendingJokerAssignment) fillJokerModal(state.pendingJokerAssignment);
+    }
+    if (!document.getElementById('help-modal').hidden) renderHelp();
+    saveProgress();
+    window.dispatchEvent(new Event('app:language'));
+  }
+
+  /* Read by pwa.js, which runs after this script. */
+  window.IlTavolo = { t:function(key){ return t(key); } };
+
+  /* ---------- UTILITY ---------- */
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  /* Uniform and unbiased: every player has the same chance on every spin. */
+  function randomInt(n){
+    if (window.crypto && window.crypto.getRandomValues) {
+      var buf = new Uint32Array(1);
+      var limit = Math.floor(4294967296 / n) * n;
+      do { window.crypto.getRandomValues(buf); } while (buf[0] >= limit);
+      return buf[0] % n;
+    }
+    return Math.floor(Math.random() * n);
+  }
+
+  function prefersReducedMotion(){
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function announceText(text){
+    document.getElementById('live-announcer').textContent = text;
+  }
+
+  function thicknessShadow(count, color){
+    var layers = Math.min(Math.max(count - 1, 0), 6);
+    var shadows = [];
+    for (var i = 1; i <= layers; i++) shadows.push((i*2)+'px '+(i*2)+'px 0 '+color);
+    shadows.push('0 10px 24px var(--shadow)');
+    return shadows.join(', ');
+  }
+
+  /* ---------- COSTRUZIONE MAZZO ---------- */
+  function buildFullDeck(){
+    var cards = [];
+    var i = 0;
+    SUITS.forEach(function(suit){
+      RANKS.forEach(function(rank){
+        cards.push({ id:'c'+(i++), rank:rank, suit:suit.key, symbol:suit.symbol, color:suit.color, isJoker:false });
+      });
+    });
+    cards.push({ id:'j-rosso', isJoker:true, variant:'rosso' });
+    cards.push({ id:'j-nero',  isJoker:true, variant:'nero'  });
+    return cards;
+  }
+
+  /* ---------- MARKUP CARTE ---------- */
+  function cardBackMarkup(){
+    return '<div class="face card-back"><div class="card-back-frame"></div>' +
+      '<div class="card-back-emblem"><span>♠\uFE0E</span><span>♥\uFE0E</span><span>♦\uFE0E</span><span>♣\uFE0E</span></div></div>';
+  }
+
+  function cardFaceMarkup(card){
+    if (card.isJoker){
+      var variantClass = 'joker-' + card.variant;
+      return '<div class="face joker-face ' + variantClass + '">' +
+        '<div class="joker-sunburst"></div>' +
+        '<div class="joker-corner top">✦</div>' +
+        '<div class="joker-word">' + t('jokerWord') + '</div>' +
+        '<div class="joker-corner bottom">✦</div>' +
+        '</div>';
+    }
+    var colorClass = card.color === 'red' ? 'red' : 'black';
+    var isFigure = (card.rank === 'J' || card.rank === 'Q' || card.rank === 'K');
+    var middle = isFigure ? faceIllustration(card) : '<div class="center-suit">' + card.symbol + '</div>';
+    return '<div class="face card-face ' + colorClass + '">' +
+      '<div class="corner top-left"><span class="rank">' + card.rank + '</span><span class="suit">' + card.symbol + '</span></div>' +
+      middle +
+      '<div class="corner bottom-right"><span class="rank">' + card.rank + '</span><span class="suit">' + card.symbol + '</span></div>' +
+      '</div>';
+  }
+
+  function faceIllustration(card){
+    var rank = card.rank;
+    var torso = '<polygon class="figure-body" points="10,78 50,78 41,47 19,47"/>';
+    var collar = '<rect class="figure-trim" x="22" y="43" width="16" height="3" rx="1"/>';
+    var head = '<circle class="figure-body" cx="30" cy="34" r="10"/>';
+    var eyes = '<circle cx="26" cy="32" r="1.4" fill="#f7f1e1"/><circle cx="34" cy="32" r="1.4" fill="#f7f1e1"/>';
+    var chest = '<text x="30" y="69" font-size="10" text-anchor="middle" fill="#c9a24b" font-family="serif">' + card.symbol + '</text>';
+    var crown = '';
+    if (rank === 'J'){
+      crown = '<path class="figure-body" d="M18,26 Q30,10 42,26 Z"/><circle class="figure-trim" cx="30" cy="11" r="2.4"/>';
+    } else if (rank === 'Q'){
+      crown = '<rect class="figure-crown" x="17" y="21" width="26" height="5" rx="1.5"/>' +
+        '<circle class="figure-crown" cx="22" cy="15" r="3.6"/>' +
+        '<circle class="figure-crown" cx="30" cy="10" r="4.6"/>' +
+        '<circle class="figure-crown" cx="38" cy="15" r="3.6"/>';
+    } else {
+      crown = '<rect class="figure-crown" x="17" y="21" width="26" height="5" rx="1"/>' +
+        '<polygon class="figure-crown" points="17,21 21,9 25,17 30,5 35,17 39,9 43,21"/>' +
+        '<rect class="figure-crown" x="29" y="0" width="2" height="5"/>' +
+        '<rect class="figure-crown" x="27" y="1" width="6" height="2"/>';
+    }
+    var group = torso + collar + head + eyes + crown + chest;
+    return '<svg class="figure-svg" viewBox="0 0 60 160" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<g>' + group + '</g>' +
+      '<g transform="rotate(180 30 80)">' + group + '</g>' +
+      '</svg>';
+  }
+
+  function jokerName(card){
+    return t('jokerNames')[card.variant];
+  }
+
+  function describeCard(card){
+    if (card.isJoker) return jokerName(card);
+    return t('cardOf', t('ranks')[card.rank] || card.rank, t('suits')[card.suit]);
+  }
+
+  /* ---------- SCHERMATE ---------- */
+  function showScreen(name){
+    currentScreen = name;
+    document.getElementById('screen-setup').hidden = name !== 'setup';
+    document.getElementById('screen-game').hidden = name !== 'game';
+    keepScreenAwake();
+  }
+
+  /* ---------- SCHERMO ACCESO ---------- */
+  var wakeLock = null;
+  var wakeRequest = null;
+
+  function renderWakeStatus(){
+    document.getElementById('wake-status').hidden = !wakeLock;
+  }
+
+  /* Only during a visible game. iOS may refuse without a tap, so every tap retries. */
+  function keepScreenAwake(){
+    if (!('wakeLock' in navigator)) return;
+    var wanted = currentScreen === 'game' && !document.hidden;
+    if (!wanted){
+      if (wakeLock){ wakeLock.release().catch(function(){}); wakeLock = null; }
+      renderWakeStatus();
+      return;
+    }
+    if (wakeLock || wakeRequest) return;
+    wakeRequest = navigator.wakeLock.request('screen').then(function(lock){
+      wakeLock = lock;
+      lock.addEventListener('release', function(){
+        if (wakeLock === lock) wakeLock = null;
+        renderWakeStatus();
+      });
+      if (currentScreen !== 'game' || document.hidden){ lock.release().catch(function(){}); wakeLock = null; }
+      renderWakeStatus();
+    }).catch(function(){ /* Not allowed right now: the next tap tries again. */ }).then(function(){ wakeRequest = null; });
+  }
+
+  /* ---------- REGOLE ---------- */
+  function ruleFor(card){
+    return rules.items[lang][card.isJoker ? 'JOLLY' : card.rank];
+  }
+
+  function hasRule(rule){
+    return rules.enabled && !!(rule.title.trim() || rule.text.trim());
+  }
+
+  function ruleLabel(key){
+    return key === 'JOLLY' ? t('jokerLabel') : (t('ranks')[key] || key);
+  }
+
+  function renderRulesEditor(){
+    document.getElementById('rules-enabled').checked = rules.enabled;
+    var wrap = document.getElementById('rules-list');
+    var items = rules.items[lang];
+    wrap.innerHTML = '';
+    RULE_KEYS.forEach(function(key){
+      var label = ruleLabel(key);
+      var row = document.createElement('div');
+      row.className = 'rule-row';
+      row.innerHTML =
+        '<span class="rule-rank" aria-hidden="true">' + (key === 'JOLLY' ? '✦' : key) + '</span>' +
+        '<label class="sr-only" for="rule-title-' + key + '">' + escapeHtml(t('ruleTitleLabel', label)) + '</label>' +
+        '<input id="rule-title-' + key + '" data-rule="' + key + '" data-field="title" type="text" maxlength="' + RULE_TITLE_MAX + '" placeholder="' + escapeHtml(label) + '" value="' + escapeHtml(items[key].title) + '">' +
+        '<label class="sr-only" for="rule-text-' + key + '">' + escapeHtml(t('ruleTextLabel', label)) + '</label>' +
+        '<textarea id="rule-text-' + key + '" data-rule="' + key + '" data-field="text" maxlength="' + RULE_TEXT_MAX + '" rows="2" placeholder="' + escapeHtml(t('ruleTextPlaceholder')) + '">' + escapeHtml(items[key].text) + '</textarea>';
+      wrap.appendChild(row);
+    });
+  }
+
+  /* ---------- SETUP ---------- */
+  function renderNameInputs(){
+    var wrap = document.getElementById('name-inputs');
+    var existing = Array.prototype.map.call(wrap.querySelectorAll('input'), function(i){ return i.value; });
+    wrap.innerHTML = '';
+    for (var i = 0; i < playerCount; i++){
+      var label = escapeHtml(t('playerN', i + 1));
+      var row = document.createElement('div');
+      row.className = 'name-row';
+      row.innerHTML =
+        '<label for="name-' + i + '">' + label + '</label>' +
+        '<input id="name-' + i + '" type="text" maxlength="20" placeholder="' + label + '" value="' + escapeHtml(existing[i] || '') + '">';
+      wrap.appendChild(row);
+    }
+    document.getElementById('count-display').textContent = playerCount;
+    document.getElementById('count-unit').textContent = t('playersUnit', playerCount);
+  }
+
+  function updateStepperButtons(){
+    document.getElementById('count-minus').disabled = playerCount <= 1;
+    document.getElementById('count-plus').disabled = playerCount >= 8;
+  }
+
+  function getPlayerNamesFromInputs(){
+    return Array.prototype.map.call(document.querySelectorAll('#name-inputs input'), function(i){ return i.value.trim(); });
+  }
+
+  function startGame(){
+    var names = getPlayerNamesFromInputs();
+    state.players = names.map(function(name, idx){
+      return { id:'p'+idx, name: name || t('playerN', idx + 1), jokers: [] };
+    });
+
+    var cards = buildFullDeck();
+    state.allCardsById = {};
+    cards.forEach(function(c){ state.allCardsById[c.id] = c; });
+    state.deck = shuffle(cards.map(function(c){ return c.id; }));
+    state.discard = [];
+    state.jokerHolders = {};
+    state.pendingJokerAssignment = null;
+    state.turn = 0;
+    state.lastDrawer = null;
+    state.double = 1;
+    state.queen = null;
+    state.undo = [];
+
+    showScreen('game');
+    renderDeckPile();
+    renderDiscardPile(false);
+    renderTurn();
+    renderJokerPanel();
+    saveProgress();
+    document.getElementById('deck-pile').focus({preventScroll:true});
+    window.scrollTo(0,0);
+  }
+
+  /* ---------- MAZZO E SCARTI ---------- */
+  function renderDeckPile(){
+    var el = document.getElementById('deck-pile');
+    var count = state.deck.length;
+    document.getElementById('deck-count').textContent = t('cards', count);
+    el.className = 'pile deck-pile' + (count === 0 ? ' empty' : '');
+    el.style.boxShadow = count === 0 ? 'none' : thicknessShadow(count, 'var(--gold)');
+    el.innerHTML = count === 0 ? '<div class="empty-slot">' + escapeHtml(t('emptyDeck')).replace('\n', '<br>') + '</div>' : cardBackMarkup();
+    el.setAttribute('aria-disabled', count === 0 ? 'true' : 'false');
+  }
+
+  function renderDiscardPile(animate){
+    var el = document.getElementById('discard-pile');
+    var count = state.discard.length;
+    document.getElementById('discard-count').textContent = t('cards', count);
+    if (count === 0){
+      el.className = 'pile discard-pile';
+      el.style.boxShadow = 'none';
+      el.setAttribute('aria-label', t('noDiscard'));
+      el.innerHTML = '<div class="empty-slot">' + escapeHtml(t('noDiscard')) + '</div>';
+      return;
+    }
+    el.className = 'pile discard-pile' + (animate ? ' just-dealt' : '');
+    el.style.boxShadow = thicknessShadow(count, 'var(--ivory-dim)');
+    var topCard = state.allCardsById[state.discard[count - 1]];
+    el.innerHTML = cardFaceMarkup(topCard);
+    el.setAttribute('aria-label', describeCard(topCard));
+  }
+
+  function pulseEmptyDeck(){
+    var el = document.getElementById('deck-pile');
+    el.classList.add('empty-pulse');
+    setTimeout(function(){ el.classList.remove('empty-pulse'); }, 400);
+    announceText(t('emptyDeckAnnounce'));
+  }
+
+  function drawCard(){
+    if (currentScreen !== 'game' || state.pendingJokerAssignment || shuffling) return;
+    if (!document.getElementById('card-reveal').hidden) closeReveal();
+    if (state.deck.length === 0){ pulseEmptyDeck(); return; }
+    var card = state.allCardsById[state.deck[state.deck.length - 1]];
+    takeSnapshot({ type:'draw', card:card.id });
+    state.deck.pop();
+    var n = state.players.length;
+    var drawer = state.turn;
+    var mult = card.isJoker ? 1 : state.double;
+    state.lastDrawer = drawer;
+    state.turn = (drawer + 1) % n;
+
+    // The Queen lasts until the drawer's turn comes round again (each ×2 adds one more round).
+    var expired = null;
+    if (state.queen){
+      state.queen.left--;
+      if (state.queen.left <= 0){ expired = state.queen.holder; state.queen = null; }
+    }
+    // Jokers neither use nor clear a King's doubling; Kings stack (King after King gives ×4).
+    if (!card.isJoker){
+      state.double = card.rank === 'K' ? Math.min(DOUBLES[DOUBLES.length - 1], mult * 2) : 1;
+      if (card.rank === 'Q'){
+        expired = null;
+        state.queen = mult * n - 1 > 0 ? { holder:drawer, left:mult * n - 1 } : null;
+      }
+    }
+
+    renderDeckPile();
+    renderTurn();
+    announceText(t('drew', playerName(drawer), describeCard(card)) + (expired !== null ? ' ' + t('queenExpired', playerName(expired)) : ''));
+    if (card.isJoker){
+      state.pendingJokerAssignment = card.id;
+      openJokerModal(card.id);
+    } else {
+      state.discard.push(card.id);
+      renderDiscardPile(true);
+      openReveal(card, drawer, mult);
+    }
+    saveProgress();
+  }
+
+  /* ---------- TURNI, EFFETTI E ANNULLA ---------- */
+  function playerName(index){
+    return state.players[index] ? state.players[index].name : '';
+  }
+
+  function renderTurn(){
+    var single = state.players.length < 2;
+    document.getElementById('turn-name').textContent = playerName(state.turn);
+    document.getElementById('turn-prev').hidden = single;
+    document.getElementById('turn-next').hidden = single;
+    renderEffects();
+    renderPlayers();
+    renderUndo();
+  }
+
+  function renderEffects(){
+    var chips = [];
+    if (rules.enabled && state.double > 1) chips.push('♚ ' + t('doubleNext', state.double));
+    if (rules.enabled && state.queen) chips.push('♛ ' + t('queenActive', playerName(state.queen.holder), state.queen.left));
+    var wrap = document.getElementById('effects');
+    wrap.innerHTML = chips.map(function(text){ return '<span class="effect-chip">' + escapeHtml(text) + '</span>'; }).join('');
+    wrap.hidden = !chips.length;
+  }
+
+  function moveTurn(step){
+    if (currentScreen !== 'game' || state.players.length < 2) return;
+    var n = state.players.length;
+    state.turn = (state.turn + step + n) % n;
+    renderTurn();
+    saveProgress();
+  }
+
+  /* Snapshots are tiny (54 ids), so undo simply restores the table as it was. */
+  function takeSnapshot(action){
+    state.undo.push({
+      action:action, deck:state.deck.slice(), discard:state.discard.slice(),
+      jokers:state.players.map(function(p){ return p.jokers.slice(); }),
+      jokerHolders:Object.assign({}, state.jokerHolders), turn:state.turn,
+      double:state.double, queen:state.queen ? { holder:state.queen.holder, left:state.queen.left } : null
+    });
+    if (state.undo.length > UNDO_LIMIT) state.undo.shift();
+  }
+
+  function actionLabel(action){
+    var card = action.card ? state.allCardsById[action.card] : null;
+    if (action.type === 'draw') return t('actionDraw', describeCard(card));
+    if (action.type === 'assign') return t('actionAssign', describeCard(card));
+    if (action.type === 'discard') return t('actionDiscard', describeCard(card));
+    return t('actionShuffle');
+  }
+
+  function renderUndo(){
+    var btn = document.getElementById('btn-undo');
+    var last = state.undo[state.undo.length - 1];
+    btn.disabled = !last || shuffling;
+    btn.setAttribute('aria-label', last ? t('undoAria', actionLabel(last.action)) : t('nothingToUndo'));
+  }
+
+  function undoLast(){
+    if (currentScreen !== 'game' || shuffling || !state.undo.length) return;
+    var snap = state.undo.pop();
+    if (!document.getElementById('card-reveal').hidden) hideReveal();
+    if (state.pendingJokerAssignment){
+      state.pendingJokerAssignment = null;
+      hideOverlay(document.getElementById('joker-modal'));
+    }
+    state.deck = snap.deck.slice();
+    state.discard = snap.discard.slice();
+    state.players.forEach(function(p, i){ p.jokers = snap.jokers[i].slice(); });
+    state.jokerHolders = Object.assign({}, snap.jokerHolders);
+    state.turn = snap.turn;
+    state.double = snap.double;
+    state.queen = snap.queen ? { holder:snap.queen.holder, left:snap.queen.left } : null;
+    state.lastDrawer = null;
+    renderDeckPile();
+    renderDiscardPile(false);
+    renderTurn();
+    renderJokerPanel();
+    saveProgress();
+    document.getElementById('deck-pile').focus({preventScroll:true});
+    announceText(t('undone', actionLabel(snap.action), playerName(state.turn)));
+  }
+
+  /* ---------- FINESTRE ---------- */
+  function showOverlay(overlay, focusTarget){
+    overlay.classList.remove('visible');
+    overlay.hidden = false;
+    document.getElementById('app').inert = true;
+    document.body.classList.add('modal-open');
+    requestAnimationFrame(function(){ overlay.classList.add('visible'); });
+    focusTarget.focus();
+  }
+
+  function hideOverlay(overlay){
+    overlay.classList.remove('visible');
+    overlay.hidden = true;
+    document.getElementById('app').inert = false;
+    document.body.classList.remove('modal-open');
+  }
+
+  /* ---------- CARTA PESCATA ---------- */
+  function openReveal(card, drawer, mult){
+    var rule = ruleFor(card);
+    var showRule = hasRule(rule);
+    document.getElementById('reveal-face').innerHTML = cardFaceMarkup(card);
+    document.getElementById('reveal-name').textContent = playerName(drawer) + ' · ' + describeCard(card);
+    document.getElementById('reveal-title').textContent = showRule && rule.title.trim() ? rule.title : describeCard(card);
+    var text = document.getElementById('reveal-rule');
+    text.textContent = showRule ? rule.text : '';
+    text.hidden = !text.textContent;
+
+    var badges = [];
+    if (rules.enabled && mult > 1) badges.push('<span class="reveal-badge">' + escapeHtml(t('doubledCard', mult)) + '</span>');
+    if (rules.enabled && card.rank === 'K') badges.push('<span class="reveal-badge soft">♚ ' + escapeHtml(t('doubleNext', state.double)) + '</span>');
+    if (rules.enabled && card.rank === 'Q' && state.queen) badges.push('<span class="reveal-badge soft">♛ ' + escapeHtml(t('queenStarted', state.queen.left)) + '</span>');
+    var badgeWrap = document.getElementById('reveal-badges');
+    badgeWrap.innerHTML = badges.join('');
+    badgeWrap.hidden = !badges.length;
+
+    setupTool(card, mult);
+    document.getElementById('reveal-close').textContent = state.players.length > 1 ? t('turnOf', playerName(state.turn)) : t('continueBtn');
+    showOverlay(document.getElementById('card-reveal'), document.getElementById(tool ? 'reveal-tool' : 'reveal-close'));
+  }
+
+  function hideReveal(){
+    clearTool();
+    hideOverlay(document.getElementById('card-reveal'));
+  }
+
+  function closeReveal(){
+    hideReveal();
+    document.getElementById('deck-pile').focus({preventScroll:true});
+  }
+
+  /* ---------- RUOTA, MONETA, PARI O DISPARI ---------- */
+  var tool = null;   // The card on screen only: results help the table decide and are never saved.
+  var wheelAngle = 0;
+
+  function clearTool(){
+    if (tool && tool.timer) clearTimeout(tool.timer);
+    tool = null;
+  }
+
+  function setupTool(card, mult){
+    clearTool();
+    document.getElementById('reveal-face').hidden = false;
+    document.getElementById('reveal-wheel').hidden = true;
+    var spec = rules.enabled && !card.isJoker ? TOOLS[card.rank] : null;
+    if (spec) {
+      tool = { type:spec.type, total:spec.type === 'wheel' ? spec.spins * mult : 1, done:0, counts:{}, busy:false, timer:null, result:'' };
+      if (spec.type === 'wheel') renderWheel();
+    }
+    renderTool();
+  }
+
+  function renderWheel(){
+    var n = state.players.length, seg = 360 / n, r = 96, parts = [];
+    state.players.forEach(function(p, i){
+      // Alternate colours; with an odd count the last slice is gold so neighbours never match.
+      var fill = n > 1 && n % 2 === 1 && i === n - 1 ? '#c9a24b' : (i % 2 ? '#14452f' : '#7c1f2a');
+      var ink = fill === '#c9a24b' ? '#171410' : '#f7f1e1';
+      if (n === 1) {
+        parts.push('<circle r="' + r + '" fill="' + fill + '"/>');
+      } else {
+        var a0 = (i * seg - 90) * Math.PI / 180, a1 = ((i + 1) * seg - 90) * Math.PI / 180;
+        parts.push('<path d="M0 0L' + (r * Math.cos(a0)).toFixed(2) + ' ' + (r * Math.sin(a0)).toFixed(2) +
+          'A' + r + ' ' + r + ' 0 0 1 ' + (r * Math.cos(a1)).toFixed(2) + ' ' + (r * Math.sin(a1)).toFixed(2) +
+          'Z" fill="' + fill + '" stroke="#c9a24b" stroke-width="1"/>');
+      }
+      var name = p.name.length > 11 ? p.name.slice(0, 10) + '…' : p.name;
+      var mid = n === 1 ? -90 : (i + 0.5) * seg - 90;
+      parts.push('<text transform="rotate(' + mid.toFixed(2) + ') translate(86 0)" text-anchor="end" dominant-baseline="central" fill="' + ink +
+        '" font-size="' + (n <= 4 ? 12 : n <= 6 ? 11 : 10) + '" font-family="Inter, sans-serif" font-weight="600">' + escapeHtml(name) + '</text>');
+    });
+    parts.push('<circle r="' + r + '" fill="none" stroke="#c9a24b" stroke-width="3"/><circle r="11" fill="#c9a24b"/><circle r="4" fill="#0a2a1e"/>');
+    document.getElementById('wheel-svg').innerHTML = parts.join('');
+  }
+
+  function tallyText(){
+    var list = state.players.map(function(p, i){ return tool.counts[i] ? p.name + ' ×' + tool.counts[i] : ''; }).filter(Boolean);
+    return list.length ? t('wheelTally', list.join(' · ')) : '';
+  }
+
+  function renderTool(){
+    var btn = document.getElementById('reveal-tool');
+    var pending = !!tool && tool.done < tool.total;
+    btn.hidden = !pending;
+    btn.disabled = !!tool && tool.busy;
+    if (pending) {
+      if (tool.busy) btn.textContent = tool.type === 'wheel' ? t('wheelSpinning') : t('tossing');
+      else if (tool.type === 'wheel') btn.textContent = t('wheelSpin', tool.done + 1, tool.total);
+      else btn.textContent = t(tool.type === 'coin' ? 'coinFlip' : 'parityDraw');
+    }
+    var result = document.getElementById('reveal-result');
+    result.textContent = tool ? tool.result : '';
+    result.hidden = !result.textContent;
+    var tally = document.getElementById('wheel-tally');
+    tally.textContent = tool && tool.type === 'wheel' && tool.total > 1 ? tallyText() : '';
+    tally.hidden = !tally.textContent;
+    document.getElementById('reveal-close').className = 'btn ' + (pending ? 'btn-ghost' : 'btn-gold');
+  }
+
+  function useTool(){
+    if (!tool || tool.busy || tool.done >= tool.total) return;
+    var current = tool;
+    var outcome;
+    current.busy = true;
+    if (current.type === 'wheel') {
+      var n = state.players.length, seg = 360 / n;
+      outcome = randomInt(n);
+      // Land inside the chosen slice, away from its edges, after at least three full turns.
+      var center = (outcome + 0.5) * seg + (Math.random() - 0.5) * seg * 0.6;
+      var target = wheelAngle - (wheelAngle % 360) + 360 * 5 + ((360 - center) % 360 + 360) % 360;
+      if (target - wheelAngle < 360 * 3) target += 360;
+      wheelAngle = target;
+      document.getElementById('reveal-face').hidden = true;
+      document.getElementById('reveal-wheel').hidden = false;
+      // Wait a frame after unhiding, or the browser skips the spin transition.
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        document.getElementById('wheel-svg').style.transform = 'rotate(' + target + 'deg)';
+      }); });
+    } else {
+      outcome = randomInt(2);
+    }
+    renderTool();
+    var delay = prefersReducedMotion() ? 0 : (current.type === 'wheel' ? 2700 : 650);
+    current.timer = setTimeout(function(){ finishTool(current, outcome); }, delay);
+  }
+
+  function finishTool(current, outcome){
+    if (tool !== current) return;
+    current.busy = false;
+    current.timer = null;
+    current.done++;
+    if (current.type === 'wheel') {
+      current.counts[outcome] = (current.counts[outcome] || 0) + 1;
+      current.result = t('wheelResult', playerName(outcome));
+      announceText(t('wheelAnnounce', current.done, playerName(outcome)));
+    } else {
+      current.result = current.type === 'coin' ? t(outcome ? 'heads' : 'tails') : t(outcome ? 'even' : 'odd');
+      announceText(current.result);
+    }
+    renderTool();
+    var result = document.getElementById('reveal-result');
+    result.classList.remove('pop');
+    void result.offsetWidth;
+    result.classList.add('pop');
+    if (current.done >= current.total) document.getElementById('reveal-close').focus();
+  }
+
+  /* ---------- COME SI GIOCA ---------- */
+  var helpReturnFocus = null;
+
+  function renderHelp(){
+    var items = rules.items[lang];
+    document.getElementById('help-body').innerHTML =
+      t('helpParas').map(function(p){ return '<p>' + escapeHtml(p) + '</p>'; }).join('') +
+      '<h4>' + escapeHtml(t('helpCards')) + '</h4><ul class="help-cards">' +
+      RULE_KEYS.map(function(key){
+        var item = items[key];
+        return '<li><span class="help-rank" aria-hidden="true">' + (key === 'JOLLY' ? '✦' : key) + '</span>' +
+          '<span><span class="sr-only">' + escapeHtml(ruleLabel(key)) + ': </span><strong>' + escapeHtml(item.title.trim() || ruleLabel(key)) + '</strong>' +
+          (item.text.trim() ? '<span class="help-text">' + escapeHtml(item.text) + '</span>' : '') + '</span></li>';
+      }).join('') + '</ul>' +
+      '<p class="help-note">' + escapeHtml(t('helpNote')) + '</p>';
+  }
+
+  function openHelp(){
+    helpReturnFocus = document.activeElement;
+    renderHelp();
+    showOverlay(document.getElementById('help-modal'), document.getElementById('help-close'));
+    document.querySelector('#help-modal .reveal-card').scrollTop = 0;
+  }
+
+  function closeHelp(){
+    hideOverlay(document.getElementById('help-modal'));
+    if (helpReturnFocus && helpReturnFocus.focus) helpReturnFocus.focus({preventScroll:true});
+  }
+
+  function reshuffle(){
+    if (currentScreen !== 'game' || state.pendingJokerAssignment || shuffling) return;
+    takeSnapshot({ type:'shuffle', card:null });
+    state.deck = shuffle(state.deck.concat(state.discard));
+    state.discard = [];
+    renderDeckPile();
+    renderDiscardPile(false);
+    saveProgress();
+    announceText(t('reshuffled'));
+    if (!prefersReducedMotion()) {
+      var deckEl = document.getElementById('deck-pile');
+      shuffling = true;
+      deckEl.classList.add('shuffling');
+      deckEl.setAttribute('aria-disabled','true');
+      document.getElementById('btn-reshuffle').disabled = true;
+      renderUndo();
+      setTimeout(function(){
+        shuffling = false;
+        deckEl.classList.remove('shuffling');
+        deckEl.setAttribute('aria-disabled', state.deck.length ? 'false' : 'true');
+        document.getElementById('btn-reshuffle').disabled = false;
+        renderUndo();
+      }, 520);
+    } else {
+      renderUndo();
+    }
+  }
+
+  /* ---------- JOLLY ---------- */
+  function fillJokerModal(cardId){
+    var card = state.allCardsById[cardId];
+    var drawer = state.lastDrawer;
+    document.getElementById('modal-joker-face').innerHTML = cardFaceMarkup(card);
+    document.getElementById('modal-title').textContent = drawer === null ?
+      t('jokerDrew', jokerName(card)) : t('jokerDrewBy', playerName(drawer), jokerName(card));
+    var rule = ruleFor(card);
+    var ruleEl = document.getElementById('modal-rule');
+    var showRule = hasRule(rule);
+    ruleEl.innerHTML = showRule ? '<strong>' + escapeHtml(rule.title) + '</strong>' + escapeHtml(rule.text) : '';
+    ruleEl.hidden = !showRule;
+
+    var wrap = document.getElementById('modal-players');
+    wrap.innerHTML = '';
+    state.players.forEach(function(p, idx){
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-player-choice' + (idx === drawer ? ' btn-gold' : '');
+      btn.textContent = p.name;
+      btn.addEventListener('click', function(){
+        assignJoker(cardId, p.id);
+        closeJokerModal();
+      });
+      wrap.appendChild(btn);
+    });
+    document.getElementById('modal-undo').hidden = !state.undo.length;
+  }
+
+  function openJokerModal(cardId){
+    fillJokerModal(cardId);
+    showOverlay(document.getElementById('joker-modal'), document.getElementById('modal-skip'));
+  }
+
+  function closeJokerModal(){
+    hideOverlay(document.getElementById('joker-modal'));
+    state.pendingJokerAssignment = null;
+    document.getElementById('deck-pile').focus({preventScroll:true});
+    saveProgress();
+  }
+
+  function skipJokerAssignment(){
+    var cardId = state.pendingJokerAssignment;
+    if (!cardId) return;
+    state.discard.push(cardId);
+    renderDiscardPile(true);
+    closeJokerModal();
+    renderJokerPanel();
+    announceText(t('jokerSkipped'));
+  }
+
+  function assignJoker(cardId, playerId){
+    if (state.pendingJokerAssignment === cardId) state.pendingJokerAssignment = null;
+    state.players.forEach(function(p){ p.jokers = p.jokers.filter(function(id){ return id !== cardId; }); });
+    state.jokerHolders[cardId] = playerId;
+    var player = state.players.filter(function(p){ return p.id === playerId; })[0];
+    if (player) player.jokers.push(cardId);
+    renderTurn();
+    renderJokerPanel();
+    saveProgress();
+    announceText(t('jokerAssigned', jokerName(state.allCardsById[cardId]), player.name));
+  }
+
+  function discardJoker(cardId){
+    takeSnapshot({ type:'discard', card:cardId });
+    state.players.forEach(function(p){ p.jokers = p.jokers.filter(function(id){ return id !== cardId; }); });
+    delete state.jokerHolders[cardId];
+    state.discard.push(cardId);
+    renderDiscardPile(true);
+    renderTurn();
+    renderJokerPanel();
+    announceText(t('jokerDiscarded'));
+    saveProgress();
+  }
+
+  /* ---------- PANNELLI ---------- */
+  function renderPlayers(){
+    var wrap = document.getElementById('players-list');
+    wrap.innerHTML = '';
+    state.players.forEach(function(p, idx){
+      var seat = document.createElement('div');
+      var isTurn = idx === state.turn && state.players.length > 1;
+      seat.className = 'player-seat' + (isTurn ? ' is-turn' : '');
+      if (isTurn) seat.setAttribute('aria-current', 'true');
+      var jokersHtml = p.jokers.length ? p.jokers.map(function(jid){
+        var j = state.allCardsById[jid];
+        return '<span class="joker-chip chip-' + j.variant + '">' + escapeHtml(jokerName(j)) +
+          '<button class="chip-discard" data-joker="' + jid + '" aria-label="' + escapeHtml(t('discardJokerOf', jokerName(j), p.name)) + '">' + escapeHtml(t('discardBtn')) + '</button></span>';
+      }).join('') : '<span class="no-joker">' + escapeHtml(t('noJoker')) + '</span>';
+
+      seat.innerHTML =
+        '<div class="seat-label">' + escapeHtml(t('seat', idx + 1)) + '</div>' +
+        '<div class="seat-name">' + escapeHtml(p.name) + '</div>' +
+        (isTurn ? '<span class="seat-turn">' + escapeHtml(t('onTurn')) + '</span>' : '') +
+        '<div class="seat-jokers">' + jokersHtml + '</div>';
+      wrap.appendChild(seat);
+    });
+    Array.prototype.forEach.call(wrap.querySelectorAll('.chip-discard'), function(btn){
+      btn.addEventListener('click', function(){ discardJoker(btn.getAttribute('data-joker')); });
+    });
+  }
+
+  function renderJokerPanel(){
+    var panel = document.getElementById('jokers-panel');
+    var list = document.getElementById('jokers-list');
+    var heldIds = Object.keys(state.jokerHolders);
+
+    if (heldIds.length === 0){
+      panel.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+    panel.hidden = false;
+    var badge = document.getElementById('jokers-count-badge');
+    badge.textContent = t('jokersHeld', heldIds.length);
+    badge.className = 'jokers-badge';
+
+    list.innerHTML = '';
+    heldIds.forEach(function(jid){
+      var j = state.allCardsById[jid];
+      var holderId = state.jokerHolders[jid];
+      var holder = state.players.filter(function(p){ return p.id === holderId; })[0];
+
+      var row = document.createElement('div');
+      row.className = 'joker-row';
+      var options = state.players.map(function(p){
+        return '<option value="' + p.id + '"' + (p.id === holderId ? ' selected' : '') + '>' + escapeHtml(p.name) + '</option>';
+      }).join('');
+      row.innerHTML =
+        '<span class="joker-row-face chip-' + j.variant + '"></span>' +
+        '<span class="joker-row-name">' + escapeHtml(jokerName(j)) + '</span>' +
+        '<span class="joker-row-status">' + (holder ? escapeHtml(t('heldBy', holder.name)) : '') + '</span>' +
+        '<select class="joker-select" data-joker="' + jid + '" aria-label="' + escapeHtml(t('assignJoker', jokerName(j))) + '">' + options + '</select>' +
+        '<button class="btn btn-ghost btn-small joker-discard-btn" data-joker="' + jid + '" type="button">' + escapeHtml(t('discardBtn')) + '</button>';
+      list.appendChild(row);
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('.joker-select'), function(sel){
+      sel.addEventListener('change', function(e){
+        takeSnapshot({ type:'assign', card:e.target.getAttribute('data-joker') });
+        assignJoker(e.target.getAttribute('data-joker'), e.target.value);
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('.joker-discard-btn'), function(btn){
+      btn.addEventListener('click', function(){ discardJoker(btn.getAttribute('data-joker')); });
+    });
+  }
+
+  /* ---------- EVENTI ---------- */
+  document.getElementById('count-minus').addEventListener('click', function(){
+    if (playerCount > 1){ playerCount--; renderNameInputs(); updateStepperButtons(); saveProgress(); }
+  });
+  document.getElementById('count-plus').addEventListener('click', function(){
+    if (playerCount < 8){ playerCount++; renderNameInputs(); updateStepperButtons(); saveProgress(); }
+  });
+  document.getElementById('btn-start').addEventListener('click', startGame);
+
+  var deckPileEl = document.getElementById('deck-pile');
+  deckPileEl.addEventListener('click', drawCard);
+  // Space draws on keyup, like a native button, so the same key cannot also close the card that opens.
+  deckPileEl.addEventListener('keydown', function(e){
+    if (e.key === 'Enter'){ e.preventDefault(); drawCard(); }
+    else if (e.key === ' ') e.preventDefault();
+  });
+  deckPileEl.addEventListener('keyup', function(e){
+    if (e.key === ' '){ e.preventDefault(); drawCard(); }
+  });
+
+  document.getElementById('btn-reshuffle').addEventListener('click', reshuffle);
+
+  document.getElementById('btn-new-game').addEventListener('click', function(){
+    if (confirm(t('confirmNewGame'))){
+      showScreen('setup');
+      saveProgress();
+      document.getElementById('btn-start').focus({preventScroll:true});
+      window.scrollTo(0,0);
+    }
+  });
+
+  document.getElementById('modal-skip').addEventListener('click', skipJokerAssignment);
+  document.getElementById('modal-undo').addEventListener('click', undoLast);
+  document.getElementById('btn-undo').addEventListener('click', undoLast);
+  document.getElementById('turn-prev').addEventListener('click', function(){ moveTurn(-1); });
+  document.getElementById('turn-next').addEventListener('click', function(){ moveTurn(1); });
+  document.getElementById('reveal-close').addEventListener('click', closeReveal);
+  document.getElementById('reveal-undo').addEventListener('click', undoLast);
+  document.getElementById('reveal-tool').addEventListener('click', useTool);
+  document.getElementById('card-reveal').addEventListener('click', function(e){
+    if (e.target === this) closeReveal();
+  });
+  document.getElementById('btn-help').addEventListener('click', openHelp);
+  document.getElementById('btn-help-setup').addEventListener('click', openHelp);
+  document.getElementById('help-close').addEventListener('click', closeHelp);
+  document.getElementById('help-modal').addEventListener('click', function(e){
+    if (e.target === this) closeHelp();
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    if (!document.getElementById('help-modal').hidden) closeHelp();
+    else if (!document.getElementById('card-reveal').hidden) closeReveal();
+    else if (!document.getElementById('joker-modal').hidden) skipJokerAssignment();
+  });
+
+  ['joker-modal','card-reveal','help-modal'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){
+      if (e.key !== 'Tab') return;
+      var buttons = Array.prototype.filter.call(this.querySelectorAll('button'), function(b){ return !b.hidden; });
+      var first = buttons[0], last = buttons[buttons.length-1];
+      if (e.shiftKey && document.activeElement === first) {e.preventDefault();last.focus();}
+      else if (!e.shiftKey && document.activeElement === last) {e.preventDefault();first.focus();}
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-lang]'), function(btn){
+    btn.addEventListener('click', function(){ setLanguage(btn.getAttribute('data-lang')); });
+  });
+
+  document.getElementById('rules-list').addEventListener('input', function(e){
+    var key = e.target.getAttribute('data-rule');
+    var field = e.target.getAttribute('data-field');
+    var items = rules.items[lang];
+    if (!key || !items[key] || (field !== 'title' && field !== 'text')) return;
+    items[key][field] = e.target.value;
+    saveProgress();
+  });
+  document.getElementById('rules-enabled').addEventListener('change', function(e){
+    rules.enabled = e.target.checked;
+    saveProgress();
+  });
+  document.getElementById('rules-reset').addEventListener('click', function(){
+    if (confirm(t('confirmRulesReset'))){
+      rules.items[lang] = defaultRules(lang);
+      renderRulesEditor();
+      saveProgress();
+    }
+  });
+
+  document.getElementById('name-inputs').addEventListener('input', saveProgress);
+  window.addEventListener('pagehide', saveProgress);
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) saveProgress();
+    keepScreenAwake();
+  });
+  document.addEventListener('click', keepScreenAwake);
+  window.addEventListener('app:before-update', function(event){
+    if (!saveProgress()) event.preventDefault();
+  });
+
+  /* ---------- AVVIO ---------- */
+  lang = initialLanguage();
+  applyStaticText();
+  renderNameInputs();
+  updateStepperButtons();
+  restoreProgress();
+  renderRulesEditor();
+})();
+</script>
+</body>
+</html>
