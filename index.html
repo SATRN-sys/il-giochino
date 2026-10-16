@@ -6,7 +6,7 @@
 <title>Il Giochino — Mazzo di carte</title>
 <meta name="theme-color" content="#0f3527">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="Un mazzo di 54 carte, da uno a otto amici e il vostro tavolo. Funziona anche offline.">
+<meta name="description" content="Il gioco di carte da tavolo con la regola di ogni carta, da uno a dieci amici. Funziona anche offline.">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Il Giochino">
@@ -14,6 +14,8 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="preload" href="./fonts/fraunces-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/inter-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="./fonts.css">
 <script src="./pwa.js" defer></script>
 <style>
@@ -291,12 +293,14 @@
   .reveal-badge.soft{background:rgba(247,241,225,.12);color:var(--gold-bright);}
   .wheel{position:relative;width:min(64vw,250px);aspect-ratio:1;margin:0 auto 1rem;}
   .wheel svg{display:block;width:100%;height:100%;transition:transform 2.6s cubic-bezier(.12,.7,.18,1);filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));}
-  .wheel-pointer{position:absolute;top:-6px;left:50%;z-index:1;width:0;height:0;transform:translateX(-50%);border-left:12px solid transparent;border-right:12px solid transparent;border-top:22px solid var(--gold-bright);filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));}
+  .wheel-knob{position:absolute;inset:0;z-index:1;width:100%;height:100%;pointer-events:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));}
   .reveal-result{margin:.8rem 0 0;font-family:var(--font-display);font-weight:700;font-size:1.6rem;color:var(--ivory);}
   .reveal-result.pop{animation:resultPop .35s ease-out;}
   @keyframes resultPop{from{opacity:0;transform:scale(.6);}to{opacity:1;transform:none;}}
   .wheel-tally{margin:.3rem 0 0;font-family:var(--font-mono);font-size:.8rem;color:var(--gold-bright);}
   .reveal-tool{width:100%;margin-top:1rem;}
+  .coin-stage{display:flex;justify-content:center;margin:0 auto .4rem;}
+  .coin-canvas{display:block;width:260px;height:270px;max-width:100%;}
   .help-card{max-width:440px;text-align:left;}
   .help-card p{margin:0 0 .8rem;font-size:.92rem;line-height:1.55;}
   .help-card h4{margin:1.1rem 0 .3rem;font-family:var(--font-display);font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-bright);}
@@ -307,6 +311,92 @@
   .help-text{display:block;font-size:.85rem;line-height:1.45;color:#bdc6b9;}
   .help-card .help-note{font-size:.8rem;font-style:italic;color:#bdc6b9;}
 
+  /* ---------- RIFINITURE DI DESIGN ---------- */
+  :root{--shadow:rgba(3,22,13,.55);--line:rgba(201,162,75,.24);--muted:#bdc6b9;}
+  /* Felt grain: a faint noise tile over the green, so the table is not a flat colour. */
+  body{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at top, rgba(255,255,255,.06), transparent 55%),
+      radial-gradient(ellipse at bottom, rgba(0,0,0,.45), transparent 65%),
+      var(--felt);}
+  h1,h2,h3{text-wrap:balance;}
+  p,li{text-wrap:pretty;}
+  .pile-count,.stepper-value,.effect-chip,.wheel-tally,.jokers-badge{font-variant-numeric:tabular-nums;}
+  .sprite{position:absolute;width:0;height:0;overflow:hidden;}
+  .icon{width:1.15em;height:1.15em;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+  .btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;}
+  .btn-ghost{border-color:rgba(247,241,225,.28);transition:transform .15s ease,background-color .2s ease,border-color .2s ease;}
+  .btn-ghost:hover{background:rgba(247,241,225,.06);border-color:rgba(247,241,225,.45);filter:none;}
+  .btn:disabled{opacity:.42;transform:none;}
+  .btn-gold{box-shadow:0 6px 18px rgba(201,162,75,.22),inset 0 1px 0 rgba(255,250,230,.45);}
+
+  /* Game header: title and two quiet actions on one line. */
+  .table-header{align-items:center;flex-wrap:wrap;row-gap:.7rem;padding:1.3rem 0 1rem;margin-bottom:0;border-bottom-color:var(--line);}
+  .table-header h1{font-size:clamp(1.6rem,6.4vw,2.1rem);letter-spacing:-.01em;line-height:1.05;}
+  .header-actions{flex-wrap:nowrap;gap:.4rem;}
+  .header-actions .btn-small{padding:.45rem .8rem;font-size:.78rem;}
+  .table-actions{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;max-width:420px;margin:1.3rem auto 0;}
+  .table-actions .btn{min-height:50px;padding:.7rem .8rem;font-size:.9rem;white-space:nowrap;overflow-wrap:normal;}
+  .header-actions .btn,.reveal-actions .btn{white-space:nowrap;overflow-wrap:normal;}
+  .table-hint{max-width:34ch;margin:.9rem auto 0;font-size:.8rem;line-height:1.5;}
+  .piles-row{padding-top:1.5rem;}
+
+  /* Players: a compact grid, gold seat number for whoever is drawing. */
+  .players-panel{margin-top:1.9rem;}
+  .players-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.55rem;}
+  .player-seat{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:.45rem .65rem;padding:.7rem .8rem;border-radius:14px;border-color:var(--line);background:rgba(0,0,0,.2);}
+  .seat-num,.name-num{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(201,162,75,.45);font-family:var(--font-mono);font-size:.78rem;color:var(--gold-bright);}
+  .seat-main{display:flex;flex-direction:column;align-items:flex-start;gap:.2rem;min-width:0;}
+  .seat-name{min-width:0;font-size:1rem;line-height:1.2;}
+  .seat-turn{font-size:.56rem;padding:.12rem .45rem;}
+  .player-seat.is-turn{box-shadow:inset 0 0 0 1px var(--gold-bright),0 8px 22px rgba(201,162,75,.12);}
+  .player-seat.is-turn .seat-num{background:var(--gold-bright);border-color:transparent;color:var(--ink);}
+  .player-seat .seat-jokers{grid-column:1 / -1;justify-content:flex-start;}
+  .joker-chip{max-width:100%;flex-wrap:wrap;white-space:normal;}
+
+  /* Setup: seat numbers beside the name fields. */
+  .name-row{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:.7rem;}
+  .name-row label{min-width:0;}
+  .name-num{width:32px;height:32px;}
+  .name-row input{width:100%;min-width:0;padding:.65rem .85rem;border-radius:12px;}
+  .screen-setup{border-radius:22px;border-color:var(--line);box-shadow:0 24px 60px var(--shadow);}
+  .setup-title{letter-spacing:-.01em;}
+
+  /* One look for every dialog: dark felt, gold hairline. */
+  .modal-card{background:var(--felt-deep);color:var(--ivory);color-scheme:dark;border:1px solid rgba(201,162,75,.45);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.6);}
+  .modal-card h3{color:var(--ivory);font-size:1.3rem;}
+  .modal-card p{color:var(--muted);}
+  .modal-card .modal-rule{color:var(--ivory);}
+  .modal-rule strong{color:var(--gold-bright);}
+  .modal-card .text-button{color:var(--gold-bright);}
+  .modal-card .btn-ghost{color:var(--ivory);border-color:rgba(247,241,225,.3);}
+  .modal-players{gap:.45rem;margin-bottom:.9rem;}
+  .btn-player-choice{margin:0;min-height:44px;padding:.55rem 1rem;border-radius:12px;border:1px solid rgba(247,241,225,.22);background:rgba(247,241,225,.07);color:var(--ivory);}
+  .btn-player-choice:hover{background:rgba(247,241,225,.13);}
+  .btn-player-choice.btn-gold{color:var(--ink);}
+  .reveal-card,.modal-card{box-shadow:0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,240,200,.06);}
+
+  .app-footer{font-size:.75rem;}
+  .slice-veil{opacity:0;transition:opacity .35s ease;}
+  .wheel svg.landed .slice:not(.is-winner) .slice-veil{opacity:.62;}
+  .player-dot{display:inline-block;flex-shrink:0;width:.72em;height:.72em;margin-right:.45em;border-radius:50%;background:var(--pc,var(--gold));box-shadow:0 0 0 1.5px rgba(247,241,225,.55);vertical-align:.02em;}
+  .turn-who{display:flex;align-items:center;justify-content:center;min-width:0;max-width:100%;}
+  .turn-who .player-dot{width:.62rem;height:.62rem;}
+  .seat-num,.name-num{background:var(--pc);color:var(--pc-ink);border:0;font-weight:600;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.18);}
+  .player-seat.is-turn .seat-num{background:var(--pc);color:var(--pc-ink);box-shadow:0 0 0 2px var(--felt-deep),0 0 0 4px var(--gold-bright);}
+  .player-seat{border-left:4px solid var(--pc,var(--line));}
+  .wheel-current{display:flex;align-items:center;justify-content:center;width:max-content;max-width:100%;margin:-.4rem auto .8rem;padding:.3rem .85rem;border-radius:999px;background:var(--pc);color:var(--pc-ink);font-weight:700;font-size:.95rem;}
+  .wheel-current .player-dot{display:none;}
+  .tally-item{white-space:nowrap;}
+  .reveal-result .player-dot{width:.55em;height:.55em;}
+  /* Keyboard focus keeps a visible ring on fields too; touch gets its own press feedback. */
+  .name-row input:focus-visible,.rule-row input:focus-visible,.rule-row textarea:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;}
+  button,[role="button"],summary,a{-webkit-tap-highlight-color:transparent;}
+  .deck-pile:active{transform:scale(.97);transition-duration:.08s;}
+  .setup-top{align-items:center;margin-bottom:.5rem;}
+  .setup-top .eyebrow{margin:0;}
+  .text-button.btn-icon{gap:.4rem;text-decoration:none;}
+  .text-button.btn-icon span{text-decoration:underline;text-underline-offset:3px;}
+
   @media(hover:none){.deck-pile:hover{transform:none;}}
   @media(max-width:360px){.screen-setup{padding:1.4rem 1rem;}.screen-game{padding-left:1rem;padding-right:1rem;}.table-header{gap:.7rem;}.btn-small{padding:.5rem .75rem;}.player-seat{padding:.75rem;}}
   @media(max-height:560px){.modal-overlay{align-items:flex-start;}.modal-card{padding:1rem;}.modal-joker-face{width:72px;height:101px;margin-bottom:.6rem;}}
@@ -314,6 +404,13 @@
 </style>
 </head>
 <body>
+
+<svg class="sprite" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.9-1.1 1.6v.4"/><path d="M12 16.9v.1"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="m15 15 6 6"/><path d="m4 4 5 5"/></symbol>
+</defs></svg>
 
 <div id="live-announcer" class="sr-only" aria-live="polite"></div>
 
@@ -354,21 +451,16 @@
   <!-- SCHERMATA DI GIOCO -->
   <section id="screen-game" class="screen screen-game" hidden>
     <header class="table-header">
-      <div class="table-title">
-        <p class="eyebrow" data-i18n="gameEyebrow">Mazzo completo · 54 carte</p>
-        <h1>Il Giochino</h1>
-      </div>
+      <h1>Il Giochino</h1>
       <div class="header-actions">
-        <button id="btn-new-game" class="btn btn-ghost btn-small" type="button" data-i18n="newGame">↺ Nuova partita</button>
-        <button id="btn-help" class="btn btn-ghost btn-small" type="button" data-i18n="rulesButton">? Regole</button>
-        <button id="btn-undo" class="btn btn-ghost btn-small" type="button" disabled data-i18n="undo">↶ Annulla</button>
-        <button id="btn-reshuffle" class="btn btn-gold btn-small" type="button" data-i18n="reshuffle">⟲ Rimescola</button>
+        <button id="btn-help" class="btn btn-ghost btn-small btn-icon" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-help"/></svg><span data-i18n="rulesButton">Regole</span></button>
+        <button id="btn-new-game" class="btn btn-ghost btn-small btn-icon" type="button" aria-label="Nuova partita" data-i18n-aria="newGameAria"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-restart"/></svg><span data-i18n="newGame">Nuova</span></button>
       </div>
     </header>
 
     <div id="turn-bar" class="turn-bar">
       <button id="turn-prev" class="turn-arrow" type="button" aria-label="Turno al giocatore precedente" data-i18n-aria="turnPrev">‹</button>
-      <p class="turn-now" aria-live="polite"><span class="eyebrow" data-i18n="turnNow">Tocca a</span><span id="turn-name" class="turn-name"></span></p>
+      <p class="turn-now" aria-live="polite"><span class="eyebrow" data-i18n="turnNow">Tocca a</span><span class="turn-who"><span id="turn-dot" class="player-dot" aria-hidden="true"></span><span id="turn-name" class="turn-name"></span></span></p>
       <button id="turn-next" class="turn-arrow" type="button" aria-label="Turno al giocatore successivo" data-i18n-aria="turnNext">›</button>
     </div>
     <div id="effects" class="effects" hidden></div>
@@ -385,7 +477,11 @@
         <div id="discard-count" class="pile-count">0 carte</div>
       </div>
     </div>
-    <p class="table-hint" data-i18n="hint"></p>
+    <div class="table-actions">
+      <button id="btn-undo" class="btn btn-ghost btn-icon" type="button" disabled><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg><span data-i18n="undo">Annulla</span></button>
+      <button id="btn-reshuffle" class="btn btn-gold btn-icon" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-shuffle"/></svg><span data-i18n="reshuffle">Rimescola</span></button>
+    </div>
+    <p id="table-hint" class="table-hint" data-i18n="hint"></p>
 
     <details class="jokers-panel" id="jokers-panel" hidden>
       <summary class="jokers-summary"><span data-i18n="jokersInPlay">Jolly in gioco</span> <span id="jokers-count-badge" class="jokers-badge is-empty">nessun jolly</span></summary>
@@ -425,7 +521,7 @@
     <p id="modal-rule" class="modal-rule" hidden></p>
     <p id="modal-description" data-i18n="jokerAssignQ">A chi lo assegni?</p>
     <div id="modal-players" class="modal-players"></div>
-    <button id="modal-undo" class="text-button" type="button" data-i18n="undoDraw">↶ Annulla pescata</button>
+    <button id="modal-undo" class="text-button btn-icon" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg><span data-i18n="undoDraw">Annulla pescata</span></button>
     <button id="modal-skip" class="btn btn-ghost btn-small" type="button" data-i18n="skipJoker">Scarta senza assegnare</button>
   </div>
 </div>
@@ -436,9 +532,17 @@
     <p id="reveal-name" class="reveal-name"></p>
     <div id="reveal-face" class="reveal-face" aria-hidden="true"></div>
     <div id="reveal-wheel" class="wheel" aria-hidden="true" hidden>
-      <div class="wheel-pointer"></div>
+      <svg class="wheel-knob" viewBox="-100 -100 200 200" aria-hidden="true">
+        <path d="M0-37 L11-19 A22 22 0 1 1 -11-19 Z" fill="#1b221e"/>
+        <path d="M0-37 L11-19 A22 22 0 1 1 -11-19 Z" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+        <circle r="11" fill="none" stroke="#5a625d" stroke-width="3.5"/>
+      </svg>
       <svg id="wheel-svg" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
+    <div id="reveal-coin" class="coin-stage" aria-hidden="true" hidden>
+      <canvas id="coin" class="coin-canvas" width="260" height="270" data-side="heads"></canvas>
+    </div>
+    <p id="wheel-current" class="wheel-current" aria-hidden="true" hidden></p>
     <h3 id="reveal-title"></h3>
     <p id="reveal-rule" class="reveal-rule"></p>
     <div id="reveal-badges" class="reveal-badges" hidden></div>
@@ -446,7 +550,7 @@
     <p id="wheel-tally" class="wheel-tally" hidden></p>
     <button id="reveal-tool" class="btn btn-gold reveal-tool" type="button" hidden></button>
     <div class="reveal-actions">
-      <button id="reveal-undo" class="btn btn-ghost" type="button" data-i18n="undo">↶ Annulla</button>
+      <button id="reveal-undo" class="btn btn-ghost btn-icon" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-undo"/></svg><span data-i18n="undo">Annulla</span></button>
       <button id="reveal-close" class="btn btn-gold" type="button">Continua</button>
     </div>
   </div>
@@ -479,7 +583,7 @@
   var STRINGS = {
     it: {
       title:'Il Giochino — Mazzo di carte',
-      description:'Il gioco di carte da tavolo con la regola di ogni carta, da uno a otto amici. Funziona anche offline.',
+      description:'Il gioco di carte da tavolo con la regola di ogni carta, da uno a dieci amici. Funziona anche offline.',
       lang:'Lingua',
       setupEyebrow:'Prima di iniziare',
       setupTitle:'Chi siede al tavolo?',
@@ -499,11 +603,11 @@
       confirmRulesReset:'Ripristinare le regole predefinite in italiano? Le tue modifiche andranno perse.',
       start:'Inizia la partita',
       howToPlay:'Come si gioca',
-      gameEyebrow:'Mazzo completo · 54 carte',
-      newGame:'↺ Nuova partita',
-      rulesButton:'? Regole',
-      undo:'↶ Annulla',
-      reshuffle:'⟲ Rimescola',
+      newGame:'Nuova',
+      newGameAria:'Nuova partita',
+      rulesButton:'Regole',
+      undo:'Annulla',
+      reshuffle:'Rimescola',
       turnPrev:'Turno al giocatore precedente',
       turnNext:'Turno al giocatore successivo',
       turnNow:'Tocca a',
@@ -520,7 +624,6 @@
       players:'Giocatori',
       seat:function(n){ return 'Posto ' + n; },
       onTurn:'Di turno',
-      noJoker:'Nessun jolly',
       discardBtn:'Scarta',
       discardJokerOf:function(j, p){ return 'Scarta ' + j + ' di ' + p; },
       heldBy:function(p){ return 'In mano a ' + p; },
@@ -547,7 +650,7 @@
       jokerDrewBy:function(p, j){ return p + ' ha pescato il ' + j + '!'; },
       jokerDrew:function(j){ return 'Hai pescato il ' + j + '!'; },
       jokerAssignQ:'A chi lo assegni?',
-      undoDraw:'↶ Annulla pescata',
+      undoDraw:'Annulla pescata',
       skipJoker:'Scarta senza assegnare',
       continueBtn:'Continua',
       turnOf:function(p){ return 'Tocca a ' + p; },
@@ -563,6 +666,9 @@
       coinFlip:'Lancia la moneta',
       parityDraw:'Estrai pari o dispari',
       tossing:'…',
+      coinTossing:'In aria…',
+      coinHeadsFace:'TESTA',
+      coinTailsFace:'CROCE',
       heads:'Testa!',
       tails:'Croce!',
       even:'Pari!',
@@ -586,7 +692,8 @@
       helpTitle:'Come si gioca',
       helpParas:[
         'Sedetevi in cerchio nell’ordine dei giocatori. Chi è indicato in «Tocca a» tocca il mazzo e pesca una carta: l’effetto vale subito, poi il turno passa al giocatore successivo.',
-        'Il Re raddoppia l’effetto della carta successiva e l’app lo segnala con «×2». Con il 5 e il 6 l’app gira la ruota dei nomi; con il 7 e il 9 chi pesca sceglie testa o croce, pari o dispari, e l’app estrae il risultato.',
+        'Il Re raddoppia l’effetto della carta successiva e l’app lo segnala con «×2». Con il 5 e il 6 l’app gira la ruota dei nomi; con il 7 chi pesca sceglie testa o croce e l’app lancia la moneta. Il pari o dispari del 9 si fa a mano.',
+        'Ogni giocatore ha il suo colore: lo ritrovi nella barra del turno, nell’elenco dei giocatori e negli spicchi della ruota, così mentre gira si capisce subito su chi sta per fermarsi.',
         'La Donna resta attiva per un giro completo, finché non tocca di nuovo a chi l’ha pescata, o finché qualcun altro non pesca una Donna.',
         'Il jolly resta in mano a chi lo pesca: quando è il suo turno può usarlo per passare a un altro giocatore la carta pescata, poi lo scarta.',
         'Quando il mazzo finisce, tocca «Rimescola». Se tocchi per sbaglio, usa «Annulla».'
@@ -603,7 +710,7 @@
     },
     en: {
       title:'Il Giochino — Deck of cards',
-      description:'The table card game with a rule for every card, for one to eight friends. Works offline too.',
+      description:'The table card game with a rule for every card, for one to ten friends. Works offline too.',
       lang:'Language',
       setupEyebrow:'Before you start',
       setupTitle:'Who’s at the table?',
@@ -623,11 +730,11 @@
       confirmRulesReset:'Restore the default English rules? Your changes will be lost.',
       start:'Start the game',
       howToPlay:'How to play',
-      gameEyebrow:'Full deck · 54 cards',
-      newGame:'↺ New game',
-      rulesButton:'? Rules',
-      undo:'↶ Undo',
-      reshuffle:'⟲ Shuffle',
+      newGame:'New',
+      newGameAria:'New game',
+      rulesButton:'Rules',
+      undo:'Undo',
+      reshuffle:'Shuffle',
       turnPrev:'Turn to the previous player',
       turnNext:'Turn to the next player',
       turnNow:'Now playing',
@@ -644,7 +751,6 @@
       players:'Players',
       seat:function(n){ return 'Seat ' + n; },
       onTurn:'Playing',
-      noJoker:'No joker',
       discardBtn:'Discard',
       discardJokerOf:function(j, p){ return 'Discard ' + j + ' held by ' + p; },
       heldBy:function(p){ return 'Held by ' + p; },
@@ -671,7 +777,7 @@
       jokerDrewBy:function(p, j){ return p + ' drew the ' + j + '!'; },
       jokerDrew:function(j){ return 'You drew the ' + j + '!'; },
       jokerAssignQ:'Who gets it?',
-      undoDraw:'↶ Undo draw',
+      undoDraw:'Undo draw',
       skipJoker:'Discard without giving it',
       continueBtn:'Continue',
       turnOf:function(p){ return p + '’s turn'; },
@@ -687,6 +793,9 @@
       coinFlip:'Flip the coin',
       parityDraw:'Draw odds or evens',
       tossing:'…',
+      coinTossing:'In the air…',
+      coinHeadsFace:'HEADS',
+      coinTailsFace:'TAILS',
       heads:'Heads!',
       tails:'Tails!',
       even:'Evens!',
@@ -710,7 +819,8 @@
       helpTitle:'How to play',
       helpParas:[
         'Sit in a circle in player order. The player shown under “Now playing” taps the deck and draws a card: its effect applies straight away, then the turn passes to the next player.',
-        'The King doubles the effect of the next card, and the app marks it “×2”. With a 5 or a 6 the app spins the wheel of names; with a 7 or a 9 the player calls heads or tails, odds or evens, and the app draws the result.',
+        'The King doubles the effect of the next card, and the app marks it “×2”. With a 5 or a 6 the app spins the wheel of names; with a 7 the player calls heads or tails and the app flips the coin. The odds or evens of the 9 is played by hand.',
+        'Every player has their own colour: you’ll find it in the turn bar, in the list of players and on the slices of the wheel, so while it spins you can tell straight away who it’s about to stop on.',
         'The Queen stays active for one full round, until it’s the drawer’s turn again, or until someone else draws a Queen.',
         'A joker stays with whoever draws it: on their turn they can use it to pass the card they drew to another player, then discard it.',
         'When the deck runs out, tap “Shuffle”. Tapped by mistake? Use “Undo”.'
@@ -733,13 +843,13 @@
     it: {
       'A':  { title:'Bevono tutti', text:'Tutto il tavolo beve.' },
       '2':  { title:'Salvo', text:'Non succede niente.' },
-      '3':  { title:'Bevi tu', text:'' },
+      '3':  { title:'Bevi te', text:'Ti tocca bere.' },
       '4':  { title:'Scegli tu', text:'Non bevi: scegli chi beve.' },
       '5':  { title:'Due ruote', text:'La ruota gira 2 volte tra tutti i giocatori: a ogni giro, chi esce beve.' },
       '6':  { title:'Cinque ruote', text:'La ruota gira 5 volte tra tutti i giocatori: a ogni giro, chi esce beve.' },
       '7':  { title:'Testa o croce', text:'Scegli testa o croce e lancia la moneta: se sbagli, bevi.' },
       '8':  { title:'Tu e chi hai davanti', text:'Bevi tu e chi ti sta davanti.' },
-      '9':  { title:'Pari o dispari', text:'Scegli pari o dispari ed estrai: se sbagli, bevi.' },
+      '9':  { title:'Pari o dispari', text:'Sfida qualcuno a pari o dispari con le dita: chi perde beve.' },
       '10': { title:'Bevi due volte', text:'' },
       'J':  { title:'Tu e i vicini', text:'Bevi tu e chi ti sta accanto.' },
       'Q':  { title:'Donna', text:'Per un giro completo, o finché qualcun altro non pesca una Donna, chi ti guarda beve.' },
@@ -749,13 +859,13 @@
     en: {
       'A':  { title:'Everyone drinks', text:'The whole table drinks.' },
       '2':  { title:'Safe', text:'Nothing happens.' },
-      '3':  { title:'You drink', text:'' },
+      '3':  { title:'You drink', text:'It’s your turn to drink.' },
       '4':  { title:'You choose', text:'You don’t drink: choose who drinks.' },
       '5':  { title:'Two spins', text:'The wheel spins twice among all the players: on every spin, whoever it lands on drinks.' },
       '6':  { title:'Five spins', text:'The wheel spins five times among all the players: on every spin, whoever it lands on drinks.' },
       '7':  { title:'Heads or tails', text:'Call heads or tails and flip the coin: if you’re wrong, you drink.' },
       '8':  { title:'You and across', text:'You and the player sitting opposite you drink.' },
-      '9':  { title:'Odds or evens', text:'Call odds or evens and draw: if you’re wrong, you drink.' },
+      '9':  { title:'Odds or evens', text:'Challenge someone to odds or evens with your fingers: whoever loses drinks.' },
       '10': { title:'Drink twice', text:'' },
       'J':  { title:'You and your neighbours', text:'You and the players next to you drink.' },
       'Q':  { title:'Queen', text:'For one full round, or until someone else draws a Queen, whoever looks at you drinks.' },
@@ -764,7 +874,23 @@
     }
   };
   /* Cards whose effect the app plays out. Tied to the rank, shown only while rules are on. */
-  var TOOLS = { '5':{ type:'wheel', spins:2 }, '6':{ type:'wheel', spins:5 }, '7':{ type:'coin' }, '9':{ type:'parity' } };
+  var TOOLS = { '5':{ type:'wheel', spins:2 }, '6':{ type:'wheel', spins:5 }, '7':{ type:'coin' } };
+  /* Earlier defaults: a saved rule still equal to one of them was never edited, so it follows the new default. */
+  var OLD_DEFAULT_RULES = {
+    it: { '3':{ title:'Bevi tu', text:'' }, '9':{ title:'Pari o dispari', text:'Scegli pari o dispari ed estrai: se sbagli, bevi.' } },
+    en: { '3':{ title:'You drink', text:'' }, '9':{ title:'Odds or evens', text:'Call odds or evens and draw: if you’re wrong, you drink.' } }
+  };
+
+  function upgradeDefaultRules(saved){
+    LANGS.forEach(function(language){
+      Object.keys(OLD_DEFAULT_RULES[language]).forEach(function(key){
+        var old = OLD_DEFAULT_RULES[language][key], item = saved.items[language][key];
+        if (item.title === old.title && item.text === old.text) saved.items[language][key] = { title:DEFAULT_RULES[language][key].title, text:DEFAULT_RULES[language][key].text };
+      });
+    });
+    return saved;
+  }
+
   var RULE_TITLE_MAX = 30, RULE_TEXT_MAX = 200;
   var UNDO_LIMIT = 30;
   var DOUBLES = [1, 2, 4, 8, 16];
@@ -797,6 +923,21 @@
     undo: []
   };
 
+  /* One colour per seat, the same everywhere a player appears (wheel, turn bar, seats, setup). */
+  var PLAYER_COLORS = [
+    { bg:'#cf3438', ink:'#ffffff' }, { bg:'#2c5fd0', ink:'#ffffff' }, { bg:'#3f8f3c', ink:'#ffffff' }, { bg:'#c75a1c', ink:'#ffffff' },
+    { bg:'#7d47bd', ink:'#ffffff' }, { bg:'#16858c', ink:'#ffffff' }, { bg:'#c43d7f', ink:'#ffffff' }, { bg:'#9a7408', ink:'#ffffff' },
+    { bg:'#7b4a26', ink:'#ffffff' }, { bg:'#56677a', ink:'#ffffff' }
+  ]
+  function seatStyle(index){
+    var c = PLAYER_COLORS[index % PLAYER_COLORS.length];
+    return '--pc:' + c.bg + ';--pc-ink:' + c.ink;
+  }
+  function seatDot(index){
+    return '<span class="player-dot" style="' + seatStyle(index) + '" aria-hidden="true"></span>';
+  }
+
+  var MAX_PLAYERS = 10;
   var playerCount = 4;
   var currentScreen = 'setup';
   var shuffling = false;
@@ -848,7 +989,7 @@
 
   function isValidQueen(queen, count){
     return queen === null || (!!queen && typeof queen === 'object' && isSeat(queen.holder, count) &&
-      Number.isInteger(queen.left) && queen.left >= 1 && queen.left <= DOUBLES[DOUBLES.length - 1] * 8);
+      Number.isInteger(queen.left) && queen.left >= 1 && queen.left <= DOUBLES[DOUBLES.length - 1] * MAX_PLAYERS);
   }
 
   /* Throws unless every one of the 54 cards is in exactly one place. */
@@ -896,12 +1037,12 @@
       var raw = localStorage.getItem(saveKey);
       if (!raw) return;
       var saved = JSON.parse(raw);
-      if ([1,2,3].indexOf(saved.version) === -1 || !Number.isInteger(saved.playerCount) || saved.playerCount < 1 || saved.playerCount > 8 ||
+      if ([1,2,3].indexOf(saved.version) === -1 || !Number.isInteger(saved.playerCount) || saved.playerCount < 1 || saved.playerCount > MAX_PLAYERS ||
           !Array.isArray(saved.names) || saved.names.length !== saved.playerCount ||
           !saved.names.every(function(n){ return typeof n === 'string' && n.length <= 20; }) ||
           ['setup','game'].indexOf(saved.screen) === -1) throw new Error('Invalid save');
       // Rules saved before version 3 were placeholders: the real game rules replace them.
-      if (saved.version === 3 && isValidRules(saved.rules)) rules = saved.rules;
+      if (saved.version === 3 && isValidRules(saved.rules)) rules = upgradeDefaultRules(saved.rules);
       if (saved.screen === 'game') {
         var game = saved.game;
         var cards = {};
@@ -1160,9 +1301,9 @@
       row.innerHTML =
         '<span class="rule-rank" aria-hidden="true">' + (key === 'JOLLY' ? '✦' : key) + '</span>' +
         '<label class="sr-only" for="rule-title-' + key + '">' + escapeHtml(t('ruleTitleLabel', label)) + '</label>' +
-        '<input id="rule-title-' + key + '" data-rule="' + key + '" data-field="title" type="text" maxlength="' + RULE_TITLE_MAX + '" placeholder="' + escapeHtml(label) + '" value="' + escapeHtml(items[key].title) + '">' +
+        '<input id="rule-title-' + key + '" name="rule-title-' + key + '" autocomplete="off" data-rule="' + key + '" data-field="title" type="text" maxlength="' + RULE_TITLE_MAX + '" placeholder="' + escapeHtml(label) + '" value="' + escapeHtml(items[key].title) + '">' +
         '<label class="sr-only" for="rule-text-' + key + '">' + escapeHtml(t('ruleTextLabel', label)) + '</label>' +
-        '<textarea id="rule-text-' + key + '" data-rule="' + key + '" data-field="text" maxlength="' + RULE_TEXT_MAX + '" rows="2" placeholder="' + escapeHtml(t('ruleTextPlaceholder')) + '">' + escapeHtml(items[key].text) + '</textarea>';
+        '<textarea id="rule-text-' + key + '" name="rule-text-' + key + '" autocomplete="off" data-rule="' + key + '" data-field="text" maxlength="' + RULE_TEXT_MAX + '" rows="2" placeholder="' + escapeHtml(t('ruleTextPlaceholder')) + '">' + escapeHtml(items[key].text) + '</textarea>';
       wrap.appendChild(row);
     });
   }
@@ -1177,8 +1318,8 @@
       var row = document.createElement('div');
       row.className = 'name-row';
       row.innerHTML =
-        '<label for="name-' + i + '">' + label + '</label>' +
-        '<input id="name-' + i + '" type="text" maxlength="20" placeholder="' + label + '" value="' + escapeHtml(existing[i] || '') + '">';
+        '<label for="name-' + i + '"><span class="name-num" style="' + seatStyle(i) + '" aria-hidden="true">' + (i + 1) + '</span><span class="sr-only">' + label + '</span></label>' +
+        '<input id="name-' + i + '" name="player-' + (i + 1) + '" type="text" maxlength="20" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="' + (i < playerCount - 1 ? 'next' : 'done') + '" placeholder="' + label + '" value="' + escapeHtml(existing[i] || '') + '">';
       wrap.appendChild(row);
     }
     document.getElementById('count-display').textContent = playerCount;
@@ -1187,7 +1328,7 @@
 
   function updateStepperButtons(){
     document.getElementById('count-minus').disabled = playerCount <= 1;
-    document.getElementById('count-plus').disabled = playerCount >= 8;
+    document.getElementById('count-plus').disabled = playerCount >= MAX_PLAYERS;
   }
 
   function getPlayerNamesFromInputs(){
@@ -1238,6 +1379,7 @@
     var el = document.getElementById('discard-pile');
     var count = state.discard.length;
     document.getElementById('discard-count').textContent = t('cards', count);
+    document.getElementById('table-hint').hidden = count > 0;
     if (count === 0){
       el.className = 'pile discard-pile';
       el.style.boxShadow = 'none';
@@ -1309,6 +1451,7 @@
   function renderTurn(){
     var single = state.players.length < 2;
     document.getElementById('turn-name').textContent = playerName(state.turn);
+    document.getElementById('turn-dot').setAttribute('style', seatStyle(state.turn));
     document.getElementById('turn-prev').hidden = single;
     document.getElementById('turn-next').hidden = single;
     renderEffects();
@@ -1406,7 +1549,7 @@
     var rule = ruleFor(card);
     var showRule = hasRule(rule);
     document.getElementById('reveal-face').innerHTML = cardFaceMarkup(card);
-    document.getElementById('reveal-name').textContent = playerName(drawer) + ' · ' + describeCard(card);
+    document.getElementById('reveal-name').innerHTML = seatDot(drawer) + escapeHtml(playerName(drawer) + ' · ' + describeCard(card));
     document.getElementById('reveal-title').textContent = showRule && rule.title.trim() ? rule.title : describeCard(card);
     var text = document.getElementById('reveal-rule');
     text.textContent = showRule ? rule.text : '';
@@ -1438,9 +1581,14 @@
   /* ---------- RUOTA, MONETA, PARI O DISPARI ---------- */
   var tool = null;   // The card on screen only: results help the table decide and are never saved.
   var wheelAngle = 0;
+  var coinFrame = null;
+  var wheelWatch = null, wheelShown = -1;
+  var coinTheta = 0;
 
   function clearTool(){
     if (tool && tool.timer) clearTimeout(tool.timer);
+    if (coinFrame) { cancelAnimationFrame(coinFrame); coinFrame = null; }
+    if (wheelWatch) { cancelAnimationFrame(wheelWatch); wheelWatch = null; }
     tool = null;
   }
 
@@ -1448,40 +1596,79 @@
     clearTool();
     document.getElementById('reveal-face').hidden = false;
     document.getElementById('reveal-wheel').hidden = true;
+    document.getElementById('wheel-current').hidden = true;
+    wheelShown = -1;
+    document.getElementById('reveal-coin').hidden = true;
+    coinTheta = COIN_REST;
     var spec = rules.enabled && !card.isJoker ? TOOLS[card.rank] : null;
     if (spec) {
-      tool = { type:spec.type, total:spec.type === 'wheel' ? spec.spins * mult : 1, done:0, counts:{}, busy:false, timer:null, result:'' };
+      tool = { type:spec.type, total:spec.type === 'wheel' ? spec.spins * mult : 1, done:0, counts:{}, busy:false, timer:null, result:'', resultPlayer:null };
       if (spec.type === 'wheel') renderWheel();
     }
     renderTool();
   }
 
   function renderWheel(){
-    var n = state.players.length, seg = 360 / n, r = 96, parts = [];
+    var n = state.players.length, seg = 360 / n, r = 90, parts = [];
+    parts.push('<circle r="99" fill="#111a15"/>');
     state.players.forEach(function(p, i){
-      // Alternate colours; with an odd count the last slice is gold so neighbours never match.
-      var fill = n > 1 && n % 2 === 1 && i === n - 1 ? '#c9a24b' : (i % 2 ? '#14452f' : '#7c1f2a');
-      var ink = fill === '#c9a24b' ? '#171410' : '#f7f1e1';
+      var fill = PLAYER_COLORS[i % PLAYER_COLORS.length].bg;
+      var shape;
       if (n === 1) {
-        parts.push('<circle r="' + r + '" fill="' + fill + '"/>');
+        shape = '<circle r="' + r + '"';
       } else {
         var a0 = (i * seg - 90) * Math.PI / 180, a1 = ((i + 1) * seg - 90) * Math.PI / 180;
-        parts.push('<path d="M0 0L' + (r * Math.cos(a0)).toFixed(2) + ' ' + (r * Math.sin(a0)).toFixed(2) +
-          'A' + r + ' ' + r + ' 0 0 1 ' + (r * Math.cos(a1)).toFixed(2) + ' ' + (r * Math.sin(a1)).toFixed(2) +
-          'Z" fill="' + fill + '" stroke="#c9a24b" stroke-width="1"/>');
+        shape = '<path d="M0 0L' + (r * Math.cos(a0)).toFixed(2) + ' ' + (r * Math.sin(a0)).toFixed(2) +
+          'A' + r + ' ' + r + ' 0 0 1 ' + (r * Math.cos(a1)).toFixed(2) + ' ' + (r * Math.sin(a1)).toFixed(2) + 'Z"';
       }
+      parts.push('<g class="slice" data-seat="' + i + '">' + shape + ' fill="' + fill + '" stroke="rgba(0,0,0,.28)" stroke-width="1"/>');
       var name = p.name.length > 11 ? p.name.slice(0, 10) + '…' : p.name;
       var mid = n === 1 ? -90 : (i + 0.5) * seg - 90;
-      parts.push('<text transform="rotate(' + mid.toFixed(2) + ') translate(86 0)" text-anchor="end" dominant-baseline="central" fill="' + ink +
-        '" font-size="' + (n <= 4 ? 12 : n <= 6 ? 11 : 10) + '" font-family="Inter, sans-serif" font-weight="600">' + escapeHtml(name) + '</text>');
+      parts.push('<text transform="rotate(' + mid.toFixed(2) + ') translate(80 0)" text-anchor="end" dominant-baseline="central" fill="#ffffff"' +
+        ' font-size="' + (n <= 4 ? 14 : n <= 6 ? 13 : n <= 8 ? 12 : 11) + '" font-family="Inter, sans-serif" font-weight="600">' + escapeHtml(name) + '</text>');
+      parts.push(shape + ' class="slice-veil" fill="#05100b"/></g>');
     });
-    parts.push('<circle r="' + r + '" fill="none" stroke="#c9a24b" stroke-width="3"/><circle r="11" fill="#c9a24b"/><circle r="4" fill="#0a2a1e"/>');
+    parts.push('<circle r="99" fill="none" stroke="rgba(201,162,75,.55)" stroke-width="1"/>');
     document.getElementById('wheel-svg').innerHTML = parts.join('');
   }
 
-  function tallyText(){
-    var list = state.players.map(function(p, i){ return tool.counts[i] ? p.name + ' ×' + tool.counts[i] : ''; }).filter(Boolean);
-    return list.length ? t('wheelTally', list.join(' · ')) : '';
+  function tallyHtml(){
+    var list = state.players.map(function(p, i){
+      return tool.counts[i] ? '<span class="tally-item">' + seatDot(i) + escapeHtml(p.name + ' ×' + tool.counts[i]) + '</span>' : '';
+    }).filter(Boolean);
+    return list.length ? escapeHtml(t('wheelTally', '\u0000')).replace('\u0000', list.join(' · ')) : '';
+  }
+
+  /* After a spin only the winning slice stays lit; the next spin lights them all again. */
+  function markWheelWinner(index){
+    var svg = document.getElementById('wheel-svg');
+    Array.prototype.forEach.call(svg.querySelectorAll('.slice'), function(g){
+      g.classList.toggle('is-winner', Number(g.getAttribute('data-seat')) === index);
+    });
+    svg.classList.toggle('landed', index !== null);
+  }
+
+  function showWheelCurrent(index){
+    if (index === wheelShown) return;
+    wheelShown = index;
+    var el = document.getElementById('wheel-current');
+    el.innerHTML = seatDot(index) + escapeHtml(playerName(index));
+    el.setAttribute('style', seatStyle(index));
+    el.hidden = false;
+  }
+
+  /* Reads the wheel's angle as it turns and names the slice under the pointer. */
+  function watchWheel(){
+    var svg = document.getElementById('wheel-svg');
+    var n = state.players.length, seg = 360 / n;
+    function tick(){
+      var m = getComputedStyle(svg).transform, angle = 0;
+      var v = m && m !== 'none' ? m.match(/matrix\(([^)]+)\)/) : null;
+      if (v) { var k = v[1].split(',').map(Number); angle = Math.atan2(k[1], k[0]) * 180 / Math.PI; }
+      showWheelCurrent(Math.floor(((-angle % 360) + 360) % 360 / seg) % n);
+      wheelWatch = tool && tool.busy ? requestAnimationFrame(tick) : null;
+    }
+    tick();
   }
 
   function renderTool(){
@@ -1490,15 +1677,16 @@
     btn.hidden = !pending;
     btn.disabled = !!tool && tool.busy;
     if (pending) {
-      if (tool.busy) btn.textContent = tool.type === 'wheel' ? t('wheelSpinning') : t('tossing');
+      if (tool.busy) btn.textContent = tool.type === 'wheel' ? t('wheelSpinning') : t(tool.type === 'coin' ? 'coinTossing' : 'tossing');
       else if (tool.type === 'wheel') btn.textContent = t('wheelSpin', tool.done + 1, tool.total);
       else btn.textContent = t(tool.type === 'coin' ? 'coinFlip' : 'parityDraw');
     }
     var result = document.getElementById('reveal-result');
-    result.textContent = tool ? tool.result : '';
+    if (tool && tool.result && tool.resultPlayer !== null) result.innerHTML = seatDot(tool.resultPlayer) + escapeHtml(tool.result);
+    else result.textContent = tool ? tool.result : '';
     result.hidden = !result.textContent;
     var tally = document.getElementById('wheel-tally');
-    tally.textContent = tool && tool.type === 'wheel' && tool.total > 1 ? tallyText() : '';
+    tally.innerHTML = tool && tool.type === 'wheel' && tool.total > 1 ? tallyHtml() : '';
     tally.hidden = !tally.textContent;
     document.getElementById('reveal-close').className = 'btn ' + (pending ? 'btn-ghost' : 'btn-gold');
   }
@@ -1518,16 +1706,141 @@
       wheelAngle = target;
       document.getElementById('reveal-face').hidden = true;
       document.getElementById('reveal-wheel').hidden = false;
+      markWheelWinner(null);
       // Wait a frame after unhiding, or the browser skips the spin transition.
       requestAnimationFrame(function(){ requestAnimationFrame(function(){
         document.getElementById('wheel-svg').style.transform = 'rotate(' + target + 'deg)';
+        watchWheel();
       }); });
+    } else if (current.type === 'coin') {
+      outcome = randomInt(2);
+      tossCoin(outcome);
     } else {
       outcome = randomInt(2);
     }
     renderTool();
-    var delay = prefersReducedMotion() ? 0 : (current.type === 'wheel' ? 2700 : 650);
+    var delay = prefersReducedMotion() ? 0 : (current.type === 'wheel' ? 2700 : current.type === 'coin' ? 1650 : 650);
     current.timer = setTimeout(function(){ finishTool(current, outcome); }, delay);
+  }
+
+  /* A thick gold coin drawn on a canvas with a small 3D projection, so it looks the same
+     in every browser. theta turns the coin about the horizontal axis: 0 faces the viewer,
+     COIN_REST lies flat on the table seen from above, heads up; tails is half a turn away. */
+  var COIN_MS = 1600, COIN_RISE = 120, COIN_R = 66, COIN_T = 11, COIN_W = 260, COIN_H = 270;
+  var COIN_REST = Math.PI / 4;
+  var COIN_ART = null;
+
+  function coinArt(){
+    if (!COIN_ART && window.Path2D) {
+      var crown = new Path2D('M8 34h44l4-24-13 10-13-17-13 17L4 10z');
+      [[4, 9], [30, 3], [56, 9]].forEach(function(c){ crown.moveTo(c[0] + 3, c[1]); crown.arc(c[0], c[1], 3, 0, Math.PI * 2); });
+      COIN_ART = {
+        heads:{ path:crown, w:60, h:40, size:0.8 },
+        tails:{ path:new Path2D('M15 2h10v13h13v10H25v13H15V25H2V15h13z'), w:40, h:40, size:0.6 }
+      };
+    }
+    return COIN_ART;
+  }
+
+  function drawCoin(theta, lift){
+    var canvas = document.getElementById('coin');
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 3);
+    if (canvas.width !== Math.round(COIN_W * dpr)) { canvas.width = Math.round(COIN_W * dpr); canvas.height = Math.round(COIN_H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, COIN_W, COIN_H);
+
+    var c = Math.cos(theta), s = Math.sin(theta);
+    var zoom = 1 + 0.12 * lift / COIN_RISE;              // a little bigger when it flies towards you
+    var R = COIN_R * zoom, T = COIN_T * zoom, ry = Math.max(R * Math.abs(c), 0.6);
+    var cx = COIN_W / 2, table = COIN_H - 24;
+    var cy = table - 6 - COIN_R * Math.cos(COIN_REST) - lift;
+
+    // Soft shadow on the table, smaller and fainter while the coin is up.
+    var near = 1 - 0.6 * lift / COIN_RISE;
+    ctx.save();
+    ctx.translate(cx, table);
+    ctx.scale(1, 0.17);
+    var sg = ctx.createRadialGradient(0, 0, 0, 0, 0, COIN_R * 1.1 * near);
+    sg.addColorStop(0, 'rgba(0,0,0,' + (0.6 * near).toFixed(3) + ')');
+    sg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.arc(0, 0, COIN_R * 1.1 * near, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Front face centre sits at -(T/2)·sin θ, back face at +(T/2)·sin θ; the band between them is the rim.
+    var front = c >= 0;
+    var yVis = cy - (front ? 1 : -1) * (T / 2) * s;
+    var yHid = cy + (front ? 1 : -1) * (T / 2) * s;
+    var eg = ctx.createLinearGradient(cx - R, 0, cx + R, 0);
+    eg.addColorStop(0, '#3f2c0f'); eg.addColorStop(0.28, '#c99f4a'); eg.addColorStop(0.5, '#8a682a'); eg.addColorStop(0.8, '#b48a3c'); eg.addColorStop(1, '#35250c');
+    ctx.fillStyle = eg;
+    ctx.beginPath(); ctx.ellipse(cx, yHid, R, ry, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(cx - R, Math.min(yVis, yHid), 2 * R, Math.abs(yVis - yHid));
+
+    // Visible face, drawn as a circle squashed into the ellipse.
+    ctx.save();
+    ctx.translate(cx, yVis);
+    ctx.scale(1, ry / R);
+    function disc(r){ ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); }
+    var fg = ctx.createLinearGradient(-R, -R, R, R);
+    fg.addColorStop(0, '#e7c46c'); fg.addColorStop(0.45, '#a77f36'); fg.addColorStop(1, '#6a4d1e');
+    ctx.fillStyle = fg; disc(R); ctx.fill();
+    // Raised rim with its groove.
+    var rg = ctx.createLinearGradient(-R, -R, R, R);
+    rg.addColorStop(0, '#f6dd92'); rg.addColorStop(0.5, '#9a7330'); rg.addColorStop(1, '#e9c573');
+    ctx.strokeStyle = rg; ctx.lineWidth = R * 0.09; disc(R * 0.94); ctx.stroke();
+    ctx.lineWidth = 1.3; ctx.strokeStyle = 'rgba(55,36,10,.6)'; disc(R * 0.875); ctx.stroke();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,236,180,.35)'; disc(R * 0.86); ctx.stroke();
+
+    // Emblem and word in ivory relief: dark edge below, light edge above, then the face.
+    var side = front ? 'heads' : 'tails';
+    var art = coinArt();
+    var label = t(front ? 'coinHeadsFace' : 'coinTailsFace');
+    function relief(draw){
+      ctx.save(); ctx.translate(0, 1.8); ctx.fillStyle = 'rgba(48,30,6,.7)'; draw(); ctx.restore();
+      ctx.save(); ctx.translate(0, -1.2); ctx.fillStyle = 'rgba(255,250,232,.9)'; draw(); ctx.restore();
+      ctx.save(); ctx.fillStyle = '#e9e2d0'; draw(); ctx.restore();
+    }
+    if (art) {
+      var a = art[side], k = R * a.size / a.w;
+      relief(function(){ ctx.translate(-a.w * k / 2, -R * 0.14 - a.h * k / 2); ctx.scale(k, k); ctx.fill(a.path); });
+    }
+    ctx.font = '700 ' + (R * 0.19).toFixed(1) + 'px Fraunces, Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    relief(function(){ ctx.fillText(label.split('').join(String.fromCharCode(8202)), 0, R * 0.5); });
+
+    // Light from above and in front: the face brightens as it turns towards it.
+    var lit = (front ? 1 : -1) * (0.55 * s + 0.83 * c);
+    ctx.fillStyle = lit > 0.75 ? 'rgba(255,238,190,' + ((lit - 0.75) * 0.6).toFixed(3) + ')' : 'rgba(0,0,0,' + (Math.min(0.55, (0.75 - lit) * 0.45)).toFixed(3) + ')';
+    disc(R); ctx.fill();
+    ctx.restore();
+  }
+
+  function tossCoin(heads){
+    var canvas = document.getElementById('coin');
+    canvas.setAttribute('data-side', heads ? 'heads' : 'tails');
+    document.getElementById('reveal-face').hidden = true;
+    document.getElementById('reveal-coin').hidden = false;
+    if (coinFrame) cancelAnimationFrame(coinFrame);
+    var from = coinTheta;
+    var target = COIN_REST + (heads ? 0 : Math.PI);
+    while (target < from + 8 * Math.PI) target += 2 * Math.PI;   // at least four full flips
+    coinTheta = target;
+    if (prefersReducedMotion()) { drawCoin(target, 0); return; }
+    var start = null;
+    function frame(now){
+      if (start === null) start = now;
+      var p = Math.min(1, (now - start) / COIN_MS);
+      var spin = 1 - Math.pow(1 - p, 3);                          // fast at the throw, slowing as it lands
+      var lift = p < 0.84 ? COIN_RISE * 4 * (p / 0.84) * (1 - p / 0.84)
+        : 9 * Math.sin(Math.PI * (p - 0.84) / 0.16);                // and a small bounce on the table
+      drawCoin(from + (target - from) * spin, lift);
+      coinFrame = p < 1 ? requestAnimationFrame(frame) : null;
+    }
+    coinFrame = requestAnimationFrame(frame);
   }
 
   function finishTool(current, outcome){
@@ -1538,6 +1851,10 @@
     if (current.type === 'wheel') {
       current.counts[outcome] = (current.counts[outcome] || 0) + 1;
       current.result = t('wheelResult', playerName(outcome));
+      current.resultPlayer = outcome;
+      if (wheelWatch) { cancelAnimationFrame(wheelWatch); wheelWatch = null; }
+      showWheelCurrent(outcome);
+      markWheelWinner(outcome);
       announceText(t('wheelAnnounce', current.done, playerName(outcome)));
     } else {
       current.result = current.type === 'coin' ? t(outcome ? 'heads' : 'tails') : t(outcome ? 'even' : 'odd');
@@ -1627,7 +1944,7 @@
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn btn-player-choice' + (idx === drawer ? ' btn-gold' : '');
-      btn.textContent = p.name;
+      btn.innerHTML = seatDot(idx) + escapeHtml(p.name);
       btn.addEventListener('click', function(){
         assignJoker(cardId, p.id);
         closeJokerModal();
@@ -1691,18 +2008,20 @@
       var seat = document.createElement('div');
       var isTurn = idx === state.turn && state.players.length > 1;
       seat.className = 'player-seat' + (isTurn ? ' is-turn' : '');
+      seat.setAttribute('style', seatStyle(idx));
       if (isTurn) seat.setAttribute('aria-current', 'true');
       var jokersHtml = p.jokers.length ? p.jokers.map(function(jid){
         var j = state.allCardsById[jid];
         return '<span class="joker-chip chip-' + j.variant + '">' + escapeHtml(jokerName(j)) +
           '<button class="chip-discard" data-joker="' + jid + '" aria-label="' + escapeHtml(t('discardJokerOf', jokerName(j), p.name)) + '">' + escapeHtml(t('discardBtn')) + '</button></span>';
-      }).join('') : '<span class="no-joker">' + escapeHtml(t('noJoker')) + '</span>';
+      }).join('') : '';
 
       seat.innerHTML =
-        '<div class="seat-label">' + escapeHtml(t('seat', idx + 1)) + '</div>' +
-        '<div class="seat-name">' + escapeHtml(p.name) + '</div>' +
-        (isTurn ? '<span class="seat-turn">' + escapeHtml(t('onTurn')) + '</span>' : '') +
-        '<div class="seat-jokers">' + jokersHtml + '</div>';
+        '<span class="seat-num" style="' + seatStyle(idx) + '" aria-hidden="true">' + (idx + 1) + '</span>' +
+        '<span class="seat-main"><span class="sr-only">' + escapeHtml(t('seat', idx + 1)) + ': </span>' +
+        '<span class="seat-name">' + escapeHtml(p.name) + '</span>' +
+        (isTurn ? '<span class="seat-turn">' + escapeHtml(t('onTurn')) + '</span>' : '') + '</span>' +
+        (jokersHtml ? '<div class="seat-jokers">' + jokersHtml + '</div>' : '');
       wrap.appendChild(seat);
     });
     Array.prototype.forEach.call(wrap.querySelectorAll('.chip-discard'), function(btn){
@@ -1760,7 +2079,7 @@
     if (playerCount > 1){ playerCount--; renderNameInputs(); updateStepperButtons(); saveProgress(); }
   });
   document.getElementById('count-plus').addEventListener('click', function(){
-    if (playerCount < 8){ playerCount++; renderNameInputs(); updateStepperButtons(); saveProgress(); }
+    if (playerCount < MAX_PLAYERS){ playerCount++; renderNameInputs(); updateStepperButtons(); saveProgress(); }
   });
   document.getElementById('btn-start').addEventListener('click', startGame);
 

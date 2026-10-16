@@ -28,6 +28,7 @@ Browser reali di test Chromium e WebKit 26.5, controllati con Playwright 1.62.1 
 - [x] Versione 2: un salvataggio della versione 1 si riapre con mazzo, jolly in mano e turno al primo giocatore.
 - [x] Versione 2: Re che raddoppia carta e ruota, Donna per un giro, moneta e pari/dispari, annulla che ripristina questi effetti, finestra «Come si gioca», passaggio all'inglese e lingua del dispositivo. Esito complessivo: 21 gruppi superati in Chromium e WebKit.
 - [x] Simulatore iOS (iPhone 17 Pro, Safari): semi corretti dopo la correzione delle emoji, regole e pari/dispari nella carta grande, **Aggiungi alla schermata Home** con nome e icona, apertura a schermo intero. Con il server del Mac spento e l'app chiusa del tutto, riapertura dalla Home con la partita ripristinata e pesca funzionante.
+- [x] Nuovo design e moneta su canvas: fotogrammi del lancio verificati in WebKit (Testa e Croce atterrano sulla faccia indicata); nessun overflow a 320 px. Nel simulatore iOS l'aggiornamento da una versione in cache con «Aggiorna l'app» ha mantenuto la partita.
 - [x] Nessun errore JavaScript durante i percorsi verificati. Controllo sintattico di gioco, `pwa.js` e `sw.js` completato.
 - [x] Icone e schermate di gioco, jolly e WebKit ispezionate visivamente.
 

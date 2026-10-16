@@ -70,14 +70,14 @@ async function main(){
   pass('Manifest, all essential assets cached, no CDN requests, repository subpath');
   for(let i=0;i<3;i++)await page.locator('#count-minus').click();
   assert.equal(await page.locator('#count-display').textContent(),'1');assert(await page.locator('#count-minus').isDisabled());
-  for(let i=0;i<7;i++)await page.locator('#count-plus').click();
-  assert.equal(await page.locator('#count-display').textContent(),'8');assert(await page.locator('#count-plus').isDisabled());
+  for(let i=0;i<9;i++)await page.locator('#count-plus').click();
+  assert.equal(await page.locator('#count-display').textContent(),'10');assert(await page.locator('#count-plus').isDisabled());
   await page.locator('#name-0').fill('<Lapo & amici>');
   await page.reload();assert.equal(await page.locator('#name-0').inputValue(),'<Lapo & amici>');
   await page.locator('#btn-start').click();
-  assert.equal(await page.locator('.player-seat').count(),8);
+  assert.equal(await page.locator('.player-seat').count(),10);
   assert.equal(await page.locator('.seat-name').first().textContent(),'<Lapo & amici>');
-  await invariant(page);pass('1–8 players, draft persistence, safe rendering of player names');
+  await invariant(page);pass('1–10 players, draft persistence, safe rendering of player names');
   await page.locator('#deck-pile').press('Enter');
   const initial=await saved(page);await page.reload();assert.deepEqual(await saved(page),initial);
   pass('Keyboard draw and exact game restore after reload');
@@ -253,19 +253,23 @@ async function main(){
   await table.locator('#reveal-tool').click();
   await table.locator('#reveal-result').waitFor({state:'visible'});
   assert(['Testa!','Croce!'].includes(await table.locator('#reveal-result').textContent()));
+  assert(await visible(table,'#reveal-coin'));assert(!(await visible(table,'#reveal-face')));
+  const side=await table.locator('#coin').getAttribute('data-side');
+  assert.equal(await table.locator('#reveal-result').textContent(),side==='heads'?'Testa!':'Croce!');
   await table.locator('#reveal-close').click();
-  await table.locator('#deck-pile').click();await table.locator('#reveal-tool').click();
-  await table.locator('#reveal-result').waitFor({state:'visible'});
-  assert(['Pari!','Dispari!'].includes(await table.locator('#reveal-result').textContent()));
+  // The 9 is played by hand: the card only shows its rule.
+  await table.locator('#deck-pile').click();
+  assert.equal(await table.locator('#reveal-title').textContent(),'Pari o dispari');
+  assert(!(await visible(table,'#reveal-tool')));
   await table.locator('#reveal-undo').click();await table.locator('#btn-undo').click();
   assert.equal(await table.locator('#effects').textContent(),'♛ Donna: chi guarda Ada beve · ancora 1 pescata');
-  pass('King doubles the next card and the wheel, Queen lasts one round, coin and odds/evens, undo restores effects');
+  pass('King doubles the next card and the wheel, Queen lasts one round, coin lands on the result shown, odds/evens by hand, undo restores effects');
   await table.locator('#btn-help').click();assert.equal(await table.locator('.help-cards li').count(),14);
   await table.locator('#help-close').click();
   await table.locator('footer [data-lang="en"]').click();
   assert.equal(await table.locator('html').getAttribute('lang'),'en');
   assert.equal(await table.locator('#deck-count').textContent(),'51 cards');
-  assert.equal(await table.locator('#btn-reshuffle').textContent(),'⟲ Shuffle');
+  assert.equal(await table.locator('#btn-reshuffle').textContent(),'Shuffle');
   assert.equal(await table.locator('#effects').textContent(),'♛ Queen: whoever looks at Ada drinks · 1 more draw');
   await table.reload();assert.equal(await table.locator('.turn-now .eyebrow').textContent(),'Now playing');
   await table.locator('#deck-pile').click();
@@ -273,6 +277,24 @@ async function main(){
   assert.equal(await table.locator('#reveal-title').textContent(),'Heads or tails');
   await fx.close();
   pass('How-to-play sheet, English switch, translated game state and persisted language');
+  // An untouched old default for the 3 follows the new rule; an edited rule is kept.
+  const legacy=await browser.newContext({...devices['iPhone 13'],...IT});const lp=await legacy.newPage();
+  await lp.goto(origin+'/');await lp.locator('#count-minus').click();
+  const base=await saved(lp);
+  base.rules.items.it['3']={title:'Bevi tu',text:''};base.rules.items.it['4']={title:'Mia regola',text:'x'};
+  await lp.close();
+  // Seed the save before the app starts, so its own pagehide save cannot overwrite it.
+  const lp2=await legacy.newPage();
+  await lp2.addInitScript(s=>{if(!sessionStorage.getItem('seeded')){localStorage.setItem('il-tavolo:game:/',s);sessionStorage.setItem('seeded','1');}},JSON.stringify(base));
+  await lp2.goto(origin+'/');
+  assert.equal(await lp2.locator('#rule-title-3').inputValue(),'Bevi te');
+  assert.equal(await lp2.locator('#rule-text-3').inputValue(),'Ti tocca bere.');
+  assert.equal(await lp2.locator('#rule-title-4').inputValue(),'Mia regola');
+  // Every seat has its own colour, shared by the seat number and the wheel slice.
+  await lp2.locator('#btn-start').click();
+  const colours=await lp2.locator('.seat-num').evaluateAll(n=>n.map(e=>getComputedStyle(e).backgroundColor));
+  assert.equal(new Set(colours).size,colours.length);
+  await legacy.close();pass('Old default rule upgraded, edited rules kept, one colour per player');
   const fresh=await browser.newContext({...devices['iPhone 13'],locale:'en-GB'});const en=await fresh.newPage();
   await en.goto(origin+'/');assert.equal(await en.locator('.setup-title').textContent(),'Who’s at the table?');
   await en.locator('#btn-start').click();assert.equal(await en.locator('#turn-name').textContent(),'Player 1');

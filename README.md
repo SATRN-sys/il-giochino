@@ -2,7 +2,7 @@
 
 Conversione del gioco HTML originale in una piccola app installabile. HTML, CSS e logica del gioco restano in `index.html`; nessun framework, account, backend, analitica o dipendenza JavaScript di produzione.
 
-Sono conservati i contenuti, le illustrazioni delle carte, i colori, i caratteri e le meccaniche originali: 1–8 giocatori, 52 carte e due jolly, pesca, scarti, assegnazione e trasferimento dei jolly, rimescolamento che esclude i jolly ancora in mano.
+Sono conservati i contenuti, le illustrazioni delle carte, i colori, i caratteri e le meccaniche originali (ora da 1 a 10 giocatori), 52 carte e due jolly, pesca, scarti, assegnazione e trasferimento dei jolly, rimescolamento che esclude i jolly ancora in mano.
 
 ## Cosa cambia
 
@@ -16,11 +16,13 @@ Sono conservati i contenuti, le illustrazioni delle carte, i colori, i caratteri
 
 ## Novità della versione 2
 
-- **Regole del gioco.** Ogni carta mostra il suo effetto quando viene pescata: Asso bevono tutti, 2 salvo, 3 bevi tu, 4 scegli chi beve, 5 due ruote, 6 cinque ruote, 7 testa o croce, 8 tu e chi hai davanti, 9 pari o dispari, 10 bevi due volte, Fante tu e i vicini, Donna chi ti guarda beve, Re raddoppia la carta successiva, Jolly da tenere per passare la carta a un altro. La finestra **Come si gioca** riassume le regole e si apre dal setup o con «? Regole».
-- **Effetti gestiti dall'app.** Con il 5 e il 6 gira una ruota con i nomi dei giocatori (2 o 5 giri, tutti con la stessa probabilità a ogni giro). Con il 7 lancia una moneta, con il 9 estrae pari o dispari. Dopo un Re la carta successiva è segnata «×2» e anche i giri della ruota raddoppiano; due Re di fila danno ×4. La Donna resta attiva per un giro completo, o finché non esce un'altra Donna, e un'etichetta mostra a chi appartiene.
+- **Regole del gioco.** Ogni carta mostra il suo effetto quando viene pescata: Asso bevono tutti, 2 salvo, 3 bevi te («Ti tocca bere»), 4 scegli chi beve, 5 due ruote, 6 cinque ruote, 7 testa o croce, 8 tu e chi hai davanti, 9 pari o dispari (si fa a mano), 10 bevi due volte, Fante tu e i vicini, Donna chi ti guarda beve, Re raddoppia la carta successiva, Jolly da tenere per passare la carta a un altro. La finestra **Come si gioca** riassume le regole e si apre dal setup o con «? Regole».
+- **Effetti gestiti dall'app.** Con il 5 e il 6 gira una ruota con i nomi dei giocatori (2 o 5 giri, tutti con la stessa probabilità a ogni giro). Con il 7 lancia una moneta d'oro animata (Testa con la corona, Croce con la croce) che atterra sulla faccia estratta. Il pari o dispari del 9 si gioca a mano. Dopo un Re la carta successiva è segnata «×2» e anche i giri della ruota raddoppiano; due Re di fila danno ×4. La Donna resta attiva per un giro completo, o finché non esce un'altra Donna, e un'etichetta mostra a chi appartiene.
 - **Italiano e inglese.** Interruttore IT/EN nella schermata iniziale e in fondo alla pagina; al primo avvio la lingua segue quella del telefono. Le regole modificabili sono separate per lingua.
 - **Turni e annulla.** La barra «Tocca a» indica chi pesca e passa da sola al successivo; «↶ Annulla» ripristina fino a 30 azioni, anche dopo la chiusura dell'app, compresi gli effetti di Re e Donna.
 - **Carta grande** al centro dello schermo, **schermo sempre acceso** durante la partita dove il browser supporta la Screen Wake Lock API.
+- **Un colore per giocatore** (fino a 10, tutti con il nome in bianco): numero del posto, barra del turno, spicchi della ruota, risultato e scelta del jolly. Mentre la ruota gira, sotto il puntatore compare il nome dello spicchio su cui sta passando. Quando si ferma, gli altri spicchi si oscurano e resta acceso solo quello estratto; al giro successivo tornano tutti normali.
+- **Design rifinito.** Icone SVG coerenti al posto dei simboli ↺ ↶ ⟲; Annulla e Rimescola sotto il mazzo; giocatori in una griglia compatta; tutte le finestre in verde scuro con filo d'oro; grana di feltro leggera, ombre tinte di verde, numeri tabulari e titoli bilanciati. La moneta del 7 è disegnata su canvas con spessore, prospettiva e rilievo, senza dipendere dal 3D del browser.
 - Corretti la raggiera del jolly e i semi ♥ ♦ che Safari su iOS mostrava come emoji rosse.
 
 Le partite salvate con la versione precedente si riaprono con le nuove regole, dal turno del primo giocatore. Le regole sono pensate per adulti: la finestra «Come si gioca» invita a bere responsabilmente.
