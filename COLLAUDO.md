@@ -1,4 +1,4 @@
-# Collaudo · Il Tavolo
+# Collaudo · Il Giochino
 
 Verifiche del 16 ottobre 2026. Il progetto è pronto per essere pubblicato; nessun repository o sito pubblico è stato creato durante questa conversione.
 

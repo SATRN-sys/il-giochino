@@ -1,4 +1,4 @@
-# Il Tavolo · PWA
+# Il Giochino · PWA
 
 Conversione del gioco HTML originale in una piccola app installabile. HTML, CSS e logica del gioco restano in `index.html`; nessun framework, account, backend, analitica o dipendenza JavaScript di produzione.
 
@@ -37,10 +37,10 @@ Apri `http://localhost:8080/`. I browser consentono i service worker su localhos
 
 ## Pubblicare gratis su GitHub Pages
 
-1. Crea un repository **pubblico**, per esempio `il-tavolo`. GitHub Pages è disponibile sui repository pubblici con GitHub Free.
+1. Crea un repository **pubblico**, per esempio `il-giochino`. GitHub Pages è disponibile sui repository pubblici con GitHub Free.
 2. Carica il contenuto di questa cartella nella radice del repository: `index.html`, `pwa.js`, `sw.js`, `fonts.css`, `manifest.webmanifest`, `.nojekyll`, le cartelle `icons/` e `fonts/`. Mantieni le licenze in `fonts/`. Non è necessaria alcuna build. README e test sono facoltativi per il sito.
 3. In **Settings → Pages → Build and deployment**, scegli **Deploy from a branch**, ramo `main`, cartella **/(root)**, quindi **Save**.
-4. Attendi il completamento del deployment. L'indirizzo sarà `https://TUO-UTENTE.github.io/il-tavolo/` con la barra finale.
+4. Attendi il completamento del deployment. L'indirizzo sarà `https://TUO-UTENTE.github.io/il-giochino/` con la barra finale.
 5. Verifica che **Enforce HTTPS** sia abilitato, se modificabile. I domini `github.io` supportano HTTPS automaticamente.
 6. Apri il sito e attendi **Disponibile offline**. Poi completa la checklist in `COLLAUDO.md`.
 
@@ -54,7 +54,7 @@ Riferimenti: [configurare la sorgente di pubblicazione](https://docs.github.com/
 2. Tocca **Condividi**, il quadrato con la freccia verso l'alto. In alcuni layout di Safari si trova prima nel menu della pagina.
 3. Scegli **Aggiungi alla schermata Home**.
 4. Attiva **Apri come app web**, se compare, e tocca **Aggiungi**.
-5. Apri **Il Tavolo** dalla Home mentre sei ancora online e attendi **Disponibile offline**. Da quel momento puoi usarlo senza rete.
+5. Apri **Il Giochino** dalla Home mentre sei ancora online e attendi **Disponibile offline**. Da quel momento puoi usarlo senza rete.
 
 Il collegamento nell'app apre soltanto le istruzioni: non simula un pulsante di installazione di sistema. In modalità standalone la guida è nascosta. Vedi anche le [istruzioni Apple](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios).
 

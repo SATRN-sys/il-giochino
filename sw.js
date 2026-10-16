@@ -1,7 +1,7 @@
 'use strict';
 
 // Bump VERSION whenever any cached file changes. Publish the whole release together.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const PREFIX = 'il-tavolo:' + self.registration.scope + ':';
 const CACHE = PREFIX + VERSION;
 const ASSETS = [
